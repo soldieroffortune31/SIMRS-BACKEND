@@ -1,0 +1,18 @@
+# Node modules & dependencies
+node_modules/
+
+# Environment variables (JANGAN DIPUSH KE GIT KARENA MEMUAT PASSWORD / SECRET)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
