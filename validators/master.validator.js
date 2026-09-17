@@ -34,9 +34,38 @@ const assignRuanganSchema = Joi.object({
   is_default: Joi.boolean().default(false),
 });
 
+const createModulSchema = Joi.object({
+  kode_modul: Joi.string().trim().uppercase().required(),
+  nama_modul: Joi.string().trim().required(),
+  deskripsi: Joi.string().allow('', null).optional(),
+  icon: Joi.string().allow('', null).optional(),
+  order_index: Joi.number().integer().default(0),
+  is_active: Joi.boolean().default(true),
+});
+
+const assignModulInstalasiSchema = Joi.object({
+  instalasi_id: Joi.number().integer().positive().required(),
+  modul_ids: Joi.array().items(Joi.number().integer().positive()).required(),
+});
+
+const assignModulRuanganSchema = Joi.object({
+  ruangan_id: Joi.number().integer().positive().required(),
+  modul_ids: Joi.array().items(Joi.number().integer().positive()).required(),
+});
+
+const assignModulUserSchema = Joi.object({
+  user_id: Joi.string().uuid().required(),
+  ruangan_id: Joi.number().integer().positive().required(),
+  modul_ids: Joi.array().items(Joi.number().integer().positive()).required(),
+});
+
 module.exports = {
   createInstalasiSchema,
   createRuanganSchema,
   createUserSchema,
   assignRuanganSchema,
+  createModulSchema,
+  assignModulInstalasiSchema,
+  assignModulRuanganSchema,
+  assignModulUserSchema,
 };

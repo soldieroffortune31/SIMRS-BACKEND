@@ -17,6 +17,16 @@ const Menu = sequelize.define('Menu', {
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
   },
+  modul_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'modul',
+      key: 'id',
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
+  },
   kode_menu: {
     type: DataTypes.STRING(50),
     allowNull: false,

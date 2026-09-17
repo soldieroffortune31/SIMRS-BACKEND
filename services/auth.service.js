@@ -9,6 +9,7 @@ const {
   UserRuanganRole,
 } = require('../models');
 const menuService = require('./menu.service');
+const modulService = require('./modul.service');
 
 class AuthService {
   /**
@@ -147,6 +148,7 @@ class AuthService {
         user: userProfile,
         token: contextResult.token,
         active_context: contextResult.active_context,
+        modules: contextResult.modules,
         menus: contextResult.menus,
         permissions: contextResult.permissions,
         available_contexts: availableContexts,
@@ -237,10 +239,20 @@ class AuthService {
 
     const token = this.generateContextToken(tokenPayload);
 
-    // 3. Panggil Menu Service untuk mendapatkan menu tree dan permissions
+    // 3. Dapatkan modul yang diizinkan untuk Akun Pengguna pada Ruangan & Instalasi ini
+    const accessibleModules = await modulService.getUserAccessibleModules(
+      user.id,
+      ruangan.id,
+      instalasi.id,
+      role.kode_role
+    );
+    const allowedModuleIds = accessibleModules.map(m => m.id);
+
+    // 4. Panggil Menu Service untuk mendapatkan menu tree yang terfilter modul dan permissions
     const { menuTree, permissions } = await menuService.getMenuAndPermissionsForContext(
       role.id,
-      instalasi.id
+      instalasi.id,
+      allowedModuleIds
     );
 
     return {
@@ -270,6 +282,7 @@ class AuthService {
           nama: role.nama_role,
         },
       },
+      modules: accessibleModules,
       menus: menuTree,
       permissions,
     };
@@ -299,6 +312,7 @@ class AuthService {
     const availableContexts = await this.getUserAssignments(user.id);
 
     let activeContext = null;
+    let modules = [];
     let menus = [];
     let permissions = [];
 
@@ -318,9 +332,18 @@ class AuthService {
         },
       };
 
+      modules = await modulService.getUserAccessibleModules(
+        tokenPayload.userId,
+        tokenPayload.ruanganId,
+        tokenPayload.instalasiId,
+        tokenPayload.roleCode
+      );
+      const allowedModuleIds = modules.map(m => m.id);
+
       const menuData = await menuService.getMenuAndPermissionsForContext(
         tokenPayload.roleId,
-        tokenPayload.instalasiId
+        tokenPayload.instalasiId,
+        allowedModuleIds
       );
       menus = menuData.menuTree;
       permissions = menuData.permissions;
@@ -330,6 +353,7 @@ class AuthService {
       user,
       active_context: activeContext,
       available_contexts: availableContexts,
+      modules,
       menus,
       permissions,
     };

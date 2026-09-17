@@ -75,7 +75,12 @@ async function runTests() {
     assert(selectJson.data.active_context.instalasi.kode === 'IRJ', 'Konteks aktif instalasi adalah IRJ');
     assert(selectJson.data.active_context.ruangan.kode === 'POLI_DALAM', 'Konteks aktif ruangan adalah POLI_DALAM');
 
-    // Validasi Menu Dinamis: Hanya menu Rawat Jalan yang tampil
+    // Validasi Menu Dinamis & Modul: Hanya modul & menu Rawat Jalan yang tampil
+    assert(Array.isArray(selectJson.data.modules), 'Data modules berupa Array');
+    const moduleCodesRJ = selectJson.data.modules.map(m => m.kode_modul);
+    assert(moduleCodesRJ.includes('MODUL_RJ'), 'Akun dr. Budi di Poli Dalam mendapatkan MODUL_RJ');
+    assert(!moduleCodesRJ.includes('MODUL_IRNA'), 'Akun dr. Budi di Poli Dalam TIDAK mendapatkan MODUL_IRNA');
+
     const menusRJ = selectJson.data.menus;
     const menuCodesRJ = menusRJ.map(m => m.kode_menu);
     assert(menuCodesRJ.includes('MODUL_RJ'), 'Menu memuat Modul Rawat Jalan (MODUL_RJ)');
@@ -113,7 +118,11 @@ async function runTests() {
     assert(switchJson.data.active_context.instalasi.kode === 'IRNA', 'Konteks aktif berganti menjadi IRNA');
     assert(switchJson.data.active_context.ruangan.kode === 'BANGSAL_MAWAR', 'Konteks aktif ruangan berganti ke BANGSAL_MAWAR');
 
-    // Validasi Menu Dinamis berubah menjadi Rawat Inap
+    // Validasi Modul & Menu Dinamis berubah menjadi Rawat Inap
+    const moduleCodesIRNA = switchJson.data.modules.map(m => m.kode_modul);
+    assert(moduleCodesIRNA.includes('MODUL_IRNA'), 'Modul aktif berganti menjadi MODUL_IRNA');
+    assert(!moduleCodesIRNA.includes('MODUL_RJ'), 'MODUL_RJ otomatis tidak aktif');
+
     const menusIRNA = switchJson.data.menus;
     const menuCodesIRNA = menusIRNA.map(m => m.kode_menu);
     assert(menuCodesIRNA.includes('MODUL_IRNA'), 'Menu sekarang memuat Modul Rawat Inap (MODUL_IRNA)');
@@ -147,6 +156,8 @@ async function runTests() {
     const kasirJson = await kasirLoginRes.json();
     assert(kasirLoginRes.status === 200, 'Direct login kasir sukses');
     assert(kasirJson.data.status === 'AUTHENTICATED', 'Langsung berstatus AUTHENTICATED');
+    const kasirModuleCodes = kasirJson.data.modules.map(m => m.kode_modul);
+    assert(kasirModuleCodes.includes('MODUL_KASIR'), 'Kasir menerima MODUL_KASIR');
     const kasirMenus = kasirJson.data.menus.map(m => m.kode_menu);
     assert(kasirMenus.includes('MODUL_KASIR'), 'Kasir menerima menu Kasir & Billing');
     assert(!kasirMenus.includes('MODUL_RJ'), 'Kasir tidak memiliki akses ke Modul Rawat Jalan');
@@ -167,6 +178,8 @@ async function runTests() {
     });
     const farmasiJson = await farmasiLoginRes.json();
     assert(farmasiLoginRes.status === 200, 'Direct login apoteker sukses');
+    const farmasiModuleCodes = farmasiJson.data.modules.map(m => m.kode_modul);
+    assert(farmasiModuleCodes.includes('MODUL_FARMASI'), 'Apoteker menerima MODUL_FARMASI');
     const farmasiMenus = farmasiJson.data.menus.map(m => m.kode_menu);
     assert(farmasiMenus.includes('MODUL_FARMASI'), 'Apoteker menerima menu Pelayanan Farmasi');
 
@@ -194,6 +207,37 @@ async function runTests() {
       body: JSON.stringify({ username: 'dr.budi', password: 'passwordsalah' }),
     });
     assert(badLoginRes.status === 401, 'Login kredensial salah menghasilkan status 401 Unauthorized');
+
+    // -------------------------------------------------------------
+    // TEST 11: Pengaturan Hak Akses Modul Akun oleh Admin
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 11: Admin Mengatur Hak Akses Modul Akun di Ruangan ---');
+    // Login sebagai Admin
+    const adminLoginRes = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'admin', password: 'admin123', instalasi_id: 1, ruangan_id: 101 }),
+    });
+    const adminLoginJson = await adminLoginRes.json();
+    const adminToken = adminLoginJson.data.token;
+    assert(!!adminToken, 'Admin berhasil login');
+
+    // Admin assign modul 1 ke dr. Budi di Poli Dalam
+    const assignModRes = await fetch(`${baseUrl}/modul/assign-user-ruangan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        user_id: selectJson.data.user.id, // dr. Budi
+        ruangan_id: 101, // Poli Dalam
+        modul_ids: [1], // Hanya Modul Rawat Jalan
+      }),
+    });
+    const assignModJson = await assignModRes.json();
+    assert(assignModRes.status === 200, 'Admin berhasil mengatur modul akun di ruangan (status 200)');
+    assert(assignModJson.data.some(m => m.id === 1), 'Modul 1 (Rawat Jalan) aktif untuk user tersebut');
 
   } catch (error) {
     console.error('Terjadi error saat eksekusi test:', error);

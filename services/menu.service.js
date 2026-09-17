@@ -40,12 +40,13 @@ class MenuService {
   }
 
   /**
-   * Mengambil pohon menu yang berhak diakses berdasarkan Role dan Instalasi aktif
+   * Mengambil pohon menu yang berhak diakses berdasarkan Role, Instalasi aktif, dan Modul yang diizinkan
    * @param {number} roleId - ID Role pengguna di ruangan aktif
    * @param {number} instalasiId - ID Instalasi yang sedang aktif
+   * @param {Array<number>|null} allowedModuleIds - Array ID modul yang diizinkan untuk akun di ruangan ini (opsional)
    * @returns {Promise<{ menuTree: Array, permissions: Array<string> }>}
    */
-  async getMenuAndPermissionsForContext(roleId, instalasiId) {
+  async getMenuAndPermissionsForContext(roleId, instalasiId, allowedModuleIds = null) {
     // 1. Ambil menu ID yang terdaftar untuk role ini
     const roleMenus = await RoleMenu.findAll({
       where: { role_id: roleId },
@@ -76,7 +77,7 @@ class MenuService {
     // Menu lolos filter jika:
     // a. Terdaftar untuk role user
     // b. DAN (tidak dibatasi instalasi ATAU dibatasi tapi instalasi aktif termasuk di dalamnya)
-    const validMenuIds = allowedMenuIdsForRole.filter(menuId => {
+    let validMenuIds = allowedMenuIdsForRole.filter(menuId => {
       const isRestricted = restrictedMenuIds.has(menuId);
       if (!isRestricted) return true; // Global menu (misal Dashboard, Pengaturan Umum)
       return allowedForThisInstalasi.has(menuId); // Khusus instalasi ini
@@ -86,21 +87,41 @@ class MenuService {
       return { menuTree: [], permissions: [] };
     }
 
-    // 3. Ambil data Menu aktif beserta parent-nya agar struktur hierarki tidak patah
+    // 3. Ambil data Menu aktif beserta relasi Modul-nya
+    const { Modul } = require('../models');
     const rawMenus = await Menu.findAll({
       where: {
         id: { [Op.in]: validMenuIds },
         is_active: true,
       },
+      include: [
+        {
+          model: Modul,
+          as: 'modul',
+          attributes: ['id', 'kode_modul', 'nama_modul', 'icon'],
+          required: false,
+        },
+      ],
       order: [['order_index', 'ASC']],
     });
 
+    // 4. Filter berdasarkan Modul jika allowedModuleIds diberikan
+    let filteredMenus = rawMenus;
+    if (Array.isArray(allowedModuleIds)) {
+      const allowedModSet = new Set(allowedModuleIds);
+      filteredMenus = rawMenus.filter(m => {
+        // Jika menu tidak terikat modul manapun (modul_id null), anggap menu global
+        if (!m.modul_id) return true;
+        return allowedModSet.has(m.modul_id);
+      });
+    }
+
     // Pastikan jika sebuah child lolos, parent-nya juga diambil meskipun parent mungkin tidak punya URL langsung
     const menuMap = new Map();
-    rawMenus.forEach(m => menuMap.set(m.id, m));
+    filteredMenus.forEach(m => menuMap.set(m.id, m));
 
     const parentIdsToFetch = [];
-    rawMenus.forEach(m => {
+    filteredMenus.forEach(m => {
       if (m.parent_id && !menuMap.has(m.parent_id)) {
         parentIdsToFetch.push(m.parent_id);
       }
@@ -112,6 +133,14 @@ class MenuService {
           id: { [Op.in]: [...new Set(parentIdsToFetch)] },
           is_active: true,
         },
+        include: [
+          {
+            model: Modul,
+            as: 'modul',
+            attributes: ['id', 'kode_modul', 'nama_modul', 'icon'],
+            required: false,
+          },
+        ],
       });
       parentMenus.forEach(p => menuMap.set(p.id, p));
     }
@@ -119,7 +148,7 @@ class MenuService {
     const fullList = Array.from(menuMap.values());
     const menuTree = this.buildTree(fullList, null);
 
-    // 4. Ambil list kode permissions untuk role ini
+    // 5. Ambil list kode permissions untuk role ini
     const rolePermissions = await RolePermission.findAll({
       where: { role_id: roleId },
       include: [

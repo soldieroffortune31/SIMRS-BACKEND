@@ -159,3 +159,11 @@ Aplikasi ini sudah dilengkapi dengan fitur **Auto-Bootstrap Database & Auto-Seed
 - `POST /api/users`: Tambah Pengguna baru (Admin).
 - `POST /api/users/:id/assign-ruangan`: Tugaskan pengguna ke ruangan & role tertentu (Admin).
 - `GET /api/menus`: Seluruh menu (bisa `?tree=true`).
+
+### 4. Manajemen Modul & Hak Akses Akun (`/api/modul`)
+- `GET /api/modul`: Daftar seluruh Modul SIMRS (bisa `?include_menus=true`).
+- `POST /api/modul`: Tambah Modul baru (Admin).
+- `POST /api/modul/assign-instalasi`: Atur daftar modul aktif untuk suatu Instalasi (Admin).
+- `POST /api/modul/assign-ruangan`: Atur daftar modul aktif untuk suatu Ruangan (Admin).
+- `POST /api/modul/assign-user-ruangan`: Atur hak akses modul secara spesifik untuk Akun Pengguna di Ruangan tertentu (Admin).
+- `GET /api/modul/my-modules`: Daftar modul yang berhak diakses oleh akun pengguna pada sesi ruangan saat ini.
