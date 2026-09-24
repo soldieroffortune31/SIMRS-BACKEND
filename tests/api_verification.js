@@ -467,6 +467,51 @@ async function runTests() {
     });
     assert(duplicateRes.status === 409, 'Pendaftaran duplikat ditolak dengan status 409 Conflict');
 
+    // -------------------------------------------------------------
+    // TEST 23: Direct 1-Step Login untuk Petugas Pendaftaran (Rekam Medis)
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 23: Direct Login Petugas Pendaftaran (Instalasi Rekam Medis) ---');
+    const pendaftaranLoginRes = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'pendaftaran',
+        password: 'pendaftaran123',
+        instalasi_id: 8,
+        ruangan_id: 801,
+      }),
+    });
+    const pendaftaranJson = await pendaftaranLoginRes.json();
+    assert(pendaftaranLoginRes.status === 200, 'Direct login petugas pendaftaran sukses');
+    assert(pendaftaranJson.data.status === 'AUTHENTICATED', 'Status terautentikasi');
+    assert(pendaftaranJson.data.active_context.instalasi.kode === 'IRM', 'Konteks instalasi adalah IRM (Instalasi Rekam Medis)');
+    assert(pendaftaranJson.data.active_context.ruangan.kode === 'LOKET_PENDAFTARAN_1', 'Konteks ruangan adalah LOKET_PENDAFTARAN_1');
+    assert(pendaftaranJson.data.active_context.role.kode === 'PENDAFTARAN', 'Peran aktif adalah PENDAFTARAN');
+
+    const pendaftaranModuleCodes = pendaftaranJson.data.modules.map(m => m.kode_modul);
+    assert(pendaftaranModuleCodes.includes('MODUL_PENDAFTARAN'), 'Petugas pendaftaran menerima MODUL_PENDAFTARAN');
+    assert(!pendaftaranModuleCodes.includes('MODUL_RJ'), 'Petugas pendaftaran TIDAK memiliki akses ke Modul Rawat Jalan');
+    assert(!pendaftaranModuleCodes.includes('MODUL_FARMASI'), 'Petugas pendaftaran TIDAK memiliki akses ke Modul Farmasi');
+    assert(!pendaftaranModuleCodes.includes('MODUL_KASIR'), 'Petugas pendaftaran TIDAK memiliki akses ke Modul Kasir');
+
+    const pendaftaranMenus = pendaftaranJson.data.menus.map(m => m.kode_menu);
+    assert(pendaftaranMenus.includes('MODUL_PENDAFTARAN'), 'Petugas pendaftaran menerima pohon menu Pendaftaran & Admisi');
+
+    // -------------------------------------------------------------
+    // TEST 24: Proteksi Boundary (Petugas Pendaftaran coba akses endpoint Rawat Jalan & Kasir)
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 24: Proteksi Keamanan Boundary Petugas Pendaftaran ---');
+    const pendaftaranToken = pendaftaranJson.data.token;
+    const forbiddenRJRes = await fetch(`${baseUrl}/pelayanan/rawat-jalan/antrean`, {
+      headers: { 'Authorization': `Bearer ${pendaftaranToken}` },
+    });
+    assert(forbiddenRJRes.status === 403, 'Petugas pendaftaran ditolak (403) saat mencoba mengakses fitur Rawat Jalan Poliklinik');
+
+    const forbiddenKasirRes = await fetch(`${baseUrl}/pelayanan/kasir/tagihan`, {
+      headers: { 'Authorization': `Bearer ${pendaftaranToken}` },
+    });
+    assert(forbiddenKasirRes.status === 403, 'Petugas pendaftaran ditolak (403) saat mencoba mengakses fitur Kasir Tagihan');
+
     // Cleanup data uji coba pendaftaran agar tes dapat dijalankan berulang secara idempotent
     const { PendaftaranRawatJalan: PRJ, Pasien: PasienModel } = require('../models');
     await PRJ.destroy({ where: { id: [regId1, regLamaJson.data ? regLamaJson.data.id : null] }, force: true });

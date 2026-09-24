@@ -32,6 +32,7 @@ async function runSeeder(closeConnection = false) {
       { id: 3, kode_role: 'PERAWAT', nama_role: 'Perawat / Bidan', keterangan: 'Asuhan keperawatan, monitoring TTV, antrean poliklinik' },
       { id: 4, kode_role: 'APOTEKER', nama_role: 'Apoteker / Farmasis', keterangan: 'Telaah resep, dispensing, stok obat' },
       { id: 5, kode_role: 'KASIR', nama_role: 'Petugas Kasir & Billing', keterangan: 'Pembayaran tagihan pasien, laporan penerimaan' },
+      { id: 6, kode_role: 'PENDAFTARAN', nama_role: 'Petugas Pendaftaran & Rekam Medis', keterangan: 'Pelayanan pendaftaran pasien baru/lama dan admisi rawat jalan' },
     ];
 
     for (const r of rolesData) {
@@ -47,6 +48,7 @@ async function runSeeder(closeConnection = false) {
       { id: 4, kode_modul: 'MODUL_FARMASI', nama_modul: 'Pelayanan Farmasi & Apotek', deskripsi: 'Antrean resep, telaah klinis, dispensing, stok obat', icon: 'pill', order_index: 40 },
       { id: 5, kode_modul: 'MODUL_KASIR', nama_modul: 'Kasir & Billing Pasien', deskripsi: 'Tagihan kasir, pembayaran pelayanan, rekap shift kasir', icon: 'credit-card', order_index: 50 },
       { id: 6, kode_modul: 'MODUL_MASTER', nama_modul: 'Master & Pengaturan SIMRS', deskripsi: 'Manajemen pengguna, instalasi, ruangan, hak akses modul & menu', icon: 'settings', order_index: 90 },
+      { id: 7, kode_modul: 'MODUL_PENDAFTARAN', nama_modul: 'Pendaftaran & Admisi Pasien', deskripsi: 'Pendaftaran rawat jalan, manajemen data pasien rekam medis & antrean poli', icon: 'user-plus', order_index: 5 },
     ];
 
     for (const mod of modulData) {
@@ -63,6 +65,7 @@ async function runSeeder(closeConnection = false) {
       { id: 5, kode_instalasi: 'KASIR', nama_instalasi: 'Instalasi Kasir & Keuangan' },
       { id: 6, kode_instalasi: 'LAB', nama_instalasi: 'Instalasi Laboratorium' },
       { id: 7, kode_instalasi: 'RAD', nama_instalasi: 'Instalasi Radiologi' },
+      { id: 8, kode_instalasi: 'IRM', nama_instalasi: 'Instalasi Rekam Medis & Admisi' },
     ];
 
     for (const inst of instalasiData) {
@@ -86,6 +89,8 @@ async function runSeeder(closeConnection = false) {
       { id: 402, instalasi_id: 4, kode_ruangan: 'GUDANG_FARMASI', nama_ruangan: 'Gudang Farmasi Sentral' },
       // Kasir
       { id: 501, instalasi_id: 5, kode_ruangan: 'LOKET_KASIR_1', nama_ruangan: 'Loket Kasir Sentral 1' },
+      // Rekam Medis & Pendaftaran
+      { id: 801, instalasi_id: 8, kode_ruangan: 'LOKET_PENDAFTARAN_1', nama_ruangan: 'Loket Pendaftaran Sentral 1' },
     ];
 
     for (const r of ruanganData) {
@@ -102,7 +107,8 @@ async function runSeeder(closeConnection = false) {
       { modul_id: 2, instalasi_id: 2 }, // Modul Rawat Inap di Instalasi IRNA
       { modul_id: 3, instalasi_id: 3 }, // Modul IGD di Instalasi IGD
       { modul_id: 4, instalasi_id: 4 }, // Modul Farmasi di Instalasi Farmasi
-      { modul_id: 5, instalasi_id: 5 }, // Modul Kasir di Instalasi Kasir
+      { modul_id: 5, instalasi_id: 5 },
+      { modul_id: 7, instalasi_id: 8 }, // Modul Pendaftaran di Instalasi Rekam Medis // Modul Kasir di Instalasi Kasir
     ];
     await ModulInstalasi.bulkCreate(modulInstalasiList, { transaction: t });
 
@@ -116,6 +122,7 @@ async function runSeeder(closeConnection = false) {
       { modul_id: 4, ruangan_id: 401 },
       { modul_id: 4, ruangan_id: 402 },
       { modul_id: 5, ruangan_id: 501 },
+      { modul_id: 7, ruangan_id: 801 }, // Modul Pendaftaran di Loket Pendaftaran 1
     ];
     await ModulRuangan.bulkCreate(modulRuanganList, { transaction: t });
 
@@ -159,6 +166,12 @@ async function runSeeder(closeConnection = false) {
       { id: 52, modul_id: 6, parent_id: 50, kode_menu: 'ADM_RUANGAN', nama_menu: 'Instalasi & Ruangan', icon: 'home', path: '/pengaturan/ruangan', order_index: 92 },
       { id: 53, modul_id: 6, parent_id: 50, kode_menu: 'ADM_ROLES', nama_menu: 'Role & Hak Akses', icon: 'shield', path: '/pengaturan/roles', order_index: 93 },
       { id: 54, modul_id: 6, parent_id: 50, kode_menu: 'ADM_WILAYAH', nama_menu: 'Master Wilayah & Kodepos', icon: 'map-pin', path: '/pengaturan/wilayah', order_index: 94 },
+
+      // Modul 7: Pendaftaran & Admisi Pasien (Rekam Medis)
+      { id: 60, modul_id: 7, parent_id: null, kode_menu: 'MODUL_PENDAFTARAN', nama_menu: 'Pendaftaran & Admisi Pasien', icon: 'user-plus', path: '/pendaftaran', order_index: 5 },
+      { id: 61, modul_id: 7, parent_id: 60, kode_menu: 'PENDAFTARAN_RJ', nama_menu: 'Pendaftaran Rawat Jalan', icon: 'calendar', path: '/pendaftaran/rawat-jalan', order_index: 6 },
+      { id: 62, modul_id: 7, parent_id: 60, kode_menu: 'PENDAFTARAN_PASIEN', nama_menu: 'Data Pasien Rekam Medis', icon: 'users', path: '/pendaftaran/pasien', order_index: 7 },
+      { id: 63, modul_id: 7, parent_id: 60, kode_menu: 'PENDAFTARAN_JADWAL', nama_menu: 'Jadwal Praktik Dokter', icon: 'clock', path: '/pendaftaran/jadwal-dokter', order_index: 8 },
     ];
 
     for (const m of menuData) {
@@ -172,8 +185,7 @@ async function runSeeder(closeConnection = false) {
       { menu_id: 2, instalasi_id: 1 },
       { menu_id: 3, instalasi_id: 1 },
       { menu_id: 4, instalasi_id: 1 },
-      { menu_id: 5, instalasi_id: 1 },
-      { menu_id: 10, instalasi_id: 2 },
+      { menu_id: 5, instalasi_id: 1 },      { menu_id: 10, instalasi_id: 2 },
       { menu_id: 11, instalasi_id: 2 },
       { menu_id: 12, instalasi_id: 2 },
       { menu_id: 13, instalasi_id: 2 },
@@ -189,6 +201,10 @@ async function runSeeder(closeConnection = false) {
       { menu_id: 40, instalasi_id: 5 },
       { menu_id: 41, instalasi_id: 5 },
       { menu_id: 42, instalasi_id: 5 },
+      { menu_id: 60, instalasi_id: 8 },
+      { menu_id: 61, instalasi_id: 8 },
+      { menu_id: 62, instalasi_id: 8 },
+      { menu_id: 63, instalasi_id: 8 },
     ];
 
     await MenuInstalasi.destroy({ where: {}, force: true, transaction: t });
@@ -216,6 +232,10 @@ async function runSeeder(closeConnection = false) {
     for (const mId of kasirMenus) {
       roleMenuList.push({ role_id: 5, menu_id: mId });
     }
+    const pendaftaranMenus = [60, 61, 62, 63];
+    for (const mId of pendaftaranMenus) {
+      roleMenuList.push({ role_id: 6, menu_id: mId });
+    }
 
     await RoleMenu.destroy({ where: {}, force: true, transaction: t });
     await RoleMenu.bulkCreate(roleMenuList, { transaction: t });
@@ -228,6 +248,7 @@ async function runSeeder(closeConnection = false) {
       { username: 'perawat.siti', password_plain: 'perawat123', nama_lengkap: 'Ns. Siti Rahmawati, S.Kep', nip_nik: '199003202014022005', email: 'siti.perawat@simrs.local' },
       { username: 'apt.rani', password_plain: 'apotek123', nama_lengkap: 'apt. Rani Kusuma, S.Farm', nip_nik: '199208152016022002', email: 'rani.farmasi@simrs.local' },
       { username: 'kasir.doni', password_plain: 'kasir123', nama_lengkap: 'Doni Pratama, S.E', nip_nik: '199411252018011004', email: 'doni.kasir@simrs.local' },
+      { username: 'pendaftaran', password_plain: 'pendaftaran123', nama_lengkap: 'Lia Puspita, A.Md.RMIK', nip_nik: '199505102019032008', email: 'pendaftaran@simrs.local' },
     ];
 
     const createdUsers = {};
@@ -268,6 +289,7 @@ async function runSeeder(closeConnection = false) {
       { user_id: createdUsers['perawat.siti'].id, ruangan_id: 202, role_id: 3, is_default: false },
       { user_id: createdUsers['apt.rani'].id, ruangan_id: 401, role_id: 4, is_default: true },
       { user_id: createdUsers['kasir.doni'].id, ruangan_id: 501, role_id: 5, is_default: true },
+      { user_id: createdUsers['pendaftaran'].id, ruangan_id: 801, role_id: 6, is_default: true },
     ];
     await UserRuanganRole.bulkCreate(assignmentRows, { transaction: t });
 
@@ -288,6 +310,8 @@ async function runSeeder(closeConnection = false) {
       { user_id: createdUsers['apt.rani'].id, ruangan_id: 401, modul_id: 4, is_active: true },
       // Kasir Doni di Loket Kasir -> Diberikan Modul Kasir (ID: 5)
       { user_id: createdUsers['kasir.doni'].id, ruangan_id: 501, modul_id: 5, is_active: true },
+      // Petugas Pendaftaran di Loket Pendaftaran Sentral 1 -> Diberikan Modul Pendaftaran (ID: 7)
+      { user_id: createdUsers['pendaftaran'].id, ruangan_id: 801, modul_id: 7, is_active: true },
     ];
     await UserRuanganModul.bulkCreate(userModulRows, { transaction: t });
 
@@ -326,6 +350,7 @@ async function runSeeder(closeConnection = false) {
     console.log('3. Perawat:      username: perawat.siti  | password: perawat123 (Modul RJ di Poli Dalam, Modul IRNA di Bangsal Melati)');
     console.log('4. Apoteker:     username: apt.rani      | password: apotek123 (Modul Farmasi di Depo Farmasi)');
     console.log('5. Kasir:        username: kasir.doni    | password: kasir123  (Modul Kasir di Loket Kasir)');
+    console.log('6. Pendaftaran:  username: pendaftaran   | password: pendaftaran123 (Modul Pendaftaran di Loket Pendaftaran 1, Instalasi Rekam Medis)');
     console.log('--------------------------------\n');
   } catch (error) {
     await t.rollback();

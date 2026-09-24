@@ -7,7 +7,7 @@ class PendaftaranController {
   async getAllPasien(req, res, next) {
     try {
       const data = await pendaftaranService.getAllPasien(req.query);
-      return res.status(200).json({ success: true, ...data });
+      return res.status(200).json({ success: true, data: data.rows || data, count: data.count, rows: data.rows || data });
     } catch (error) {
       next(error);
     }
@@ -124,7 +124,7 @@ class PendaftaranController {
   async getAllPendaftaran(req, res, next) {
     try {
       const data = await pendaftaranService.getAllPendaftaran(req.query);
-      return res.status(200).json({ success: true, ...data });
+      return res.status(200).json({ success: true, data: data.rows || data, count: data.count, rows: data.rows || data });
     } catch (error) {
       next(error);
     }

@@ -38,6 +38,7 @@ class PendaftaranService {
   }
 
   async getAllPasien(query = {}) {
+    console.log('query service', query)
     const { search, jenis_kelamin, page = 1, limit = 20 } = query;
     const where = {};
 
@@ -100,6 +101,13 @@ class PendaftaranService {
   }
 
   async createPasien(data, transaction = null) {
+    const sanitized = { ...data };
+    for (const key of Object.keys(sanitized)) {
+      if (typeof sanitized[key] === 'string' && sanitized[key].trim() === '') {
+        sanitized[key] = null;
+      }
+    }
+    data = sanitized;
     if (data.nik) {
       const existing = await Pasien.findOne({
         where: { nik: data.nik },
@@ -247,7 +255,8 @@ class PendaftaranService {
       }
 
       // 2. Tanggal Kunjungan
-      const tanggalKunjungan = data.tanggal_kunjungan || new Date().toISOString().split('T')[0];
+      let rawTgl = data.tanggal_kunjungan || new Date();
+      const tanggalKunjungan = rawTgl instanceof Date ? rawTgl.toISOString().split('T')[0] : String(rawTgl).split('T')[0];
 
       // 3. Pengecekan Kuota Pasien pada Jadwal Tersebut
       const totalTerdaftar = await PendaftaranRawatJalan.count({

@@ -139,6 +139,7 @@ Aplikasi ini sudah dilengkapi dengan fitur **Auto-Bootstrap Database & Auto-Seed
 | `perawat.siti` | `perawat123` | Ns. Siti Rahmawati, S.Kep | PERAWAT | 1. Poli Penyakit Dalam (Rawat Jalan)<br>2. Bangsal Melati Kelas 1 (Rawat Inap) |
 | `apt.rani` | `apotek123` | apt. Rani Kusuma, S.Farm | APOTEKER | Depo Farmasi Rawat Jalan (Instalasi Farmasi) |
 | `kasir.doni` | `kasir123` | Doni Pratama, S.E | KASIR | Loket Kasir Sentral 1 (Instalasi Kasir) |
+| `pendaftaran` | `pendaftaran123` | Lia Puspita, A.Md.RMIK | PENDAFTARAN | Loket Pendaftaran Sentral 1 (Instalasi Rekam Medis & Admisi) |
 
 ---
 

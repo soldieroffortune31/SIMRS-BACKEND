@@ -16,6 +16,13 @@ const Pasien = sequelize.define('Pasien', {
     type: DataTypes.STRING(16),
     allowNull: true,
     unique: true,
+    set(val) {
+      if (!val || (typeof val === 'string' && val.trim() === '')) {
+        this.setDataValue('nik', null);
+      } else {
+        this.setDataValue('nik', val.trim());
+      }
+    },
   },
   nama_lengkap: {
     type: DataTypes.STRING(150),
@@ -60,8 +67,22 @@ const Pasien = sequelize.define('Pasien', {
   email: {
     type: DataTypes.STRING(100),
     allowNull: true,
+    set(val) {
+      if (!val || (typeof val === 'string' && val.trim() === '')) {
+        this.setDataValue('email', null);
+      } else {
+        this.setDataValue('email', val.trim().toLowerCase());
+      }
+    },
     validate: {
-      isEmail: true,
+      isEmailOrNull(val) {
+        if (val !== null && val !== undefined && val !== '') {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(val)) {
+            throw new Error('Format email tidak valid.');
+          }
+        }
+      },
     },
   },
   alamat_lengkap: {
