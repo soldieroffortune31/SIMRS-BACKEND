@@ -38,4 +38,10 @@ const MenuInstalasi = sequelize.define('MenuInstalasi', {
   ],
 });
 
+
+MenuInstalasi.associate = (models) => {
+  MenuInstalasi.belongsTo(models.Menu, { foreignKey: 'menu_id', as: 'menu' });
+  MenuInstalasi.belongsTo(models.Instalasi, { foreignKey: 'instalasi_id', as: 'instalasi' });
+};
+
 module.exports = MenuInstalasi;

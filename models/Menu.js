@@ -57,4 +57,49 @@ const Menu = sequelize.define('Menu', {
   paranoid: true,
 });
 
+
+Menu.associate = (models) => {
+  Menu.belongsTo(models.Menu, {
+    foreignKey: 'parent_id',
+    as: 'parent',
+  });
+  Menu.hasMany(models.Menu, {
+    foreignKey: 'parent_id',
+    as: 'children',
+  });
+
+  Menu.belongsTo(models.Modul, {
+    foreignKey: 'modul_id',
+    as: 'modul',
+  });
+
+  Menu.belongsToMany(models.Instalasi, {
+    through: models.MenuInstalasi,
+    foreignKey: 'menu_id',
+    otherKey: 'instalasi_id',
+    as: 'instalasi_list',
+  });
+  Menu.hasMany(models.MenuInstalasi, {
+    foreignKey: 'menu_id',
+    as: 'menu_instalasi_items',
+  });
+
+  Menu.belongsToMany(models.Role, {
+    through: models.RoleMenu,
+    foreignKey: 'menu_id',
+    otherKey: 'role_id',
+    as: 'roles',
+  });
+  Menu.hasMany(models.RoleMenu, {
+    foreignKey: 'menu_id',
+    as: 'role_menus',
+  });
+
+  Menu.hasMany(models.Permission, {
+    foreignKey: 'menu_id',
+    as: 'permissions',
+    onDelete: 'CASCADE',
+  });
+};
+
 module.exports = Menu;

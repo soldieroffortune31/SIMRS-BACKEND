@@ -38,4 +38,10 @@ const RoleMenu = sequelize.define('RoleMenu', {
   ],
 });
 
+
+RoleMenu.associate = (models) => {
+  RoleMenu.belongsTo(models.Role, { foreignKey: 'role_id', as: 'role' });
+  RoleMenu.belongsTo(models.Menu, { foreignKey: 'menu_id', as: 'menu' });
+};
+
 module.exports = RoleMenu;

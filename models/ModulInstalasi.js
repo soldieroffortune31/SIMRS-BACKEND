@@ -43,4 +43,10 @@ const ModulInstalasi = sequelize.define('ModulInstalasi', {
   ],
 });
 
+
+ModulInstalasi.associate = (models) => {
+  ModulInstalasi.belongsTo(models.Modul, { foreignKey: 'modul_id', as: 'modul' });
+  ModulInstalasi.belongsTo(models.Instalasi, { foreignKey: 'instalasi_id', as: 'instalasi' });
+};
+
 module.exports = ModulInstalasi;

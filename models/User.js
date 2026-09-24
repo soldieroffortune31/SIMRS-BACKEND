@@ -47,4 +47,29 @@ const User = sequelize.define('User', {
   paranoid: true,
 });
 
+
+User.associate = (models) => {
+  User.hasMany(models.UserRuanganRole, {
+    foreignKey: 'user_id',
+    as: 'assignments',
+    onDelete: 'CASCADE',
+  });
+
+  User.hasMany(models.UserRuanganModul, {
+    foreignKey: 'user_id',
+    as: 'user_ruangan_modules',
+    onDelete: 'CASCADE',
+  });
+
+  User.hasMany(models.JadwalDokter, {
+    foreignKey: 'dokter_id',
+    as: 'jadwal_praktek',
+  });
+
+  User.hasMany(models.PendaftaranRawatJalan, {
+    foreignKey: 'dokter_id',
+    as: 'pendaftaran_pasien',
+  });
+};
+
 module.exports = User;

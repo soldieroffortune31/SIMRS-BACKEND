@@ -53,4 +53,11 @@ const UserRuanganModul = sequelize.define('UserRuanganModul', {
   ],
 });
 
+
+UserRuanganModul.associate = (models) => {
+  UserRuanganModul.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
+  UserRuanganModul.belongsTo(models.Ruangan, { foreignKey: 'ruangan_id', as: 'ruangan' });
+  UserRuanganModul.belongsTo(models.Modul, { foreignKey: 'modul_id', as: 'modul' });
+};
+
 module.exports = UserRuanganModul;

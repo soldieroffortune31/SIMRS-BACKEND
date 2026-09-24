@@ -35,4 +35,44 @@ const Ruangan = sequelize.define('Ruangan', {
   paranoid: true,
 });
 
+
+Ruangan.associate = (models) => {
+  Ruangan.belongsTo(models.Instalasi, {
+    foreignKey: 'instalasi_id',
+    as: 'instalasi',
+  });
+
+  Ruangan.hasMany(models.UserRuanganRole, {
+    foreignKey: 'ruangan_id',
+    as: 'user_assignments',
+    onDelete: 'CASCADE',
+  });
+
+  Ruangan.belongsToMany(models.Modul, {
+    through: models.ModulRuangan,
+    foreignKey: 'ruangan_id',
+    otherKey: 'modul_id',
+    as: 'modules',
+  });
+  Ruangan.hasMany(models.ModulRuangan, {
+    foreignKey: 'ruangan_id',
+    as: 'modul_ruangan_items',
+  });
+
+  Ruangan.hasMany(models.UserRuanganModul, {
+    foreignKey: 'ruangan_id',
+    as: 'user_ruangan_modules',
+  });
+
+  Ruangan.hasMany(models.JadwalDokter, {
+    foreignKey: 'ruangan_id',
+    as: 'jadwal_dokter',
+  });
+
+  Ruangan.hasMany(models.PendaftaranRawatJalan, {
+    foreignKey: 'ruangan_id',
+    as: 'pendaftaran_list',
+  });
+};
+
 module.exports = Ruangan;

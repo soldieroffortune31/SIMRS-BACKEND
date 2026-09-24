@@ -25,4 +25,35 @@ const Role = sequelize.define('Role', {
   paranoid: true,
 });
 
+
+Role.associate = (models) => {
+  Role.hasMany(models.UserRuanganRole, {
+    foreignKey: 'role_id',
+    as: 'user_assignments',
+    onDelete: 'CASCADE',
+  });
+
+  Role.belongsToMany(models.Menu, {
+    through: models.RoleMenu,
+    foreignKey: 'role_id',
+    otherKey: 'menu_id',
+    as: 'menus',
+  });
+  Role.hasMany(models.RoleMenu, {
+    foreignKey: 'role_id',
+    as: 'role_menus',
+  });
+
+  Role.belongsToMany(models.Permission, {
+    through: models.RolePermission,
+    foreignKey: 'role_id',
+    otherKey: 'permission_id',
+    as: 'permissions',
+  });
+  Role.hasMany(models.RolePermission, {
+    foreignKey: 'role_id',
+    as: 'role_permissions',
+  });
+};
+
 module.exports = Role;

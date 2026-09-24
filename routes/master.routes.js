@@ -8,6 +8,7 @@ const {
   createInstalasiSchema,
   createRuanganSchema,
 } = require('../validators/master.validator');
+const wilayahRoutes = require('./wilayah.routes');
 
 // Instalasi
 router.get('/instalasi', authMiddleware, masterController.getAllInstalasi);
@@ -32,5 +33,8 @@ router.post(
 // Roles
 router.get('/roles', authMiddleware, masterController.getAllRoles);
 router.post('/roles', authMiddleware, requireRole(['ADMIN']), masterController.createRole);
+
+// Master Data Wilayah (Provinsi, Kabupaten/Kota, Kecamatan, Desa/Kelurahan, Kode Pos)
+router.use(wilayahRoutes);
 
 module.exports = router;

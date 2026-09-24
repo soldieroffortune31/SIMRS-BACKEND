@@ -43,4 +43,40 @@ const Modul = sequelize.define('Modul', {
   paranoid: true,
 });
 
+
+Modul.associate = (models) => {
+  Modul.hasMany(models.Menu, {
+    foreignKey: 'modul_id',
+    as: 'menus',
+    onDelete: 'SET NULL',
+  });
+
+  Modul.belongsToMany(models.Instalasi, {
+    through: models.ModulInstalasi,
+    foreignKey: 'modul_id',
+    otherKey: 'instalasi_id',
+    as: 'instalasi_list',
+  });
+  Modul.hasMany(models.ModulInstalasi, {
+    foreignKey: 'modul_id',
+    as: 'modul_instalasi_items',
+  });
+
+  Modul.belongsToMany(models.Ruangan, {
+    through: models.ModulRuangan,
+    foreignKey: 'modul_id',
+    otherKey: 'ruangan_id',
+    as: 'ruangan_list',
+  });
+  Modul.hasMany(models.ModulRuangan, {
+    foreignKey: 'modul_id',
+    as: 'modul_ruangan_items',
+  });
+
+  Modul.hasMany(models.UserRuanganModul, {
+    foreignKey: 'modul_id',
+    as: 'user_ruangan_modules',
+  });
+};
+
 module.exports = Modul;

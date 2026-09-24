@@ -7,6 +7,8 @@ const masterRoutes = require('./master.routes');
 const menuRoutes = require('./menu.routes');
 const modulRoutes = require('./modul.routes');
 const pelayananRoutes = require('./pelayanan.routes');
+const wilayahRoutes = require('./wilayah.routes');
+const pendaftaranRoutes = require('./pendaftaran.routes');
 
 router.get('/health', (req, res) => {
   res.status(200).json({
@@ -22,5 +24,7 @@ router.use('/master', masterRoutes);
 router.use('/menus', menuRoutes);
 router.use('/modul', modulRoutes);
 router.use('/pelayanan', pelayananRoutes);
+router.use('/wilayah', wilayahRoutes);
+router.use('/', pendaftaranRoutes);
 
 module.exports = router;

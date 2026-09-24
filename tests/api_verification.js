@@ -239,6 +239,241 @@ async function runTests() {
     assert(assignModRes.status === 200, 'Admin berhasil mengatur modul akun di ruangan (status 200)');
     assert(assignModJson.data.some(m => m.id === 1), 'Modul 1 (Rawat Jalan) aktif untuk user tersebut');
 
+    // -------------------------------------------------------------
+    // TEST 12: Master Wilayah - Mengambil daftar Provinsi
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 12: Master Wilayah - Daftar Provinsi ---');
+    const provRes = await fetch(`${baseUrl}/master/provinsi`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const provJson = await provRes.json();
+    assert(provRes.status === 200, 'Berhasil mengambil daftar provinsi (status 200)');
+    assert(Array.isArray(provJson.data) && provJson.data.length >= 6, 'Data provinsi memuat minimal 6 data');
+    const dki = provJson.data.find(p => p.kode_provinsi === '31');
+    assert(!!dki && dki.nama_provinsi === 'DKI JAKARTA', 'Ditemukan provinsi DKI JAKARTA (31)');
+
+    // -------------------------------------------------------------
+    // TEST 13: Master Wilayah - Filter Kabupaten berdasarkan provinsi_id
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 13: Master Wilayah - Filter Kabupaten per Provinsi ---');
+    const kabRes = await fetch(`${baseUrl}/master/kabupaten?provinsi_id=${dki.id}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const kabJson = await kabRes.json();
+    assert(kabRes.status === 200, 'Berhasil mengambil kabupaten per provinsi (status 200)');
+    assert(kabJson.data.some(k => k.kode_kabupaten === '31.71'), 'Ditemukan KOTA JAKARTA PUSAT');
+
+    // -------------------------------------------------------------
+    // TEST 14: Master Wilayah - Filter Kecamatan berdasarkan kabupaten_id
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 14: Master Wilayah - Filter Kecamatan per Kabupaten ---');
+    const kabPusat = kabJson.data.find(k => k.kode_kabupaten === '31.71');
+    const kecRes = await fetch(`${baseUrl}/master/kecamatan?kabupaten_id=${kabPusat.id}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const kecJson = await kecRes.json();
+    assert(kecRes.status === 200, 'Berhasil mengambil kecamatan per kabupaten (status 200)');
+    assert(kecJson.data.some(kc => kc.kode_kecamatan === '31.71.01'), 'Ditemukan KECAMATAN GAMBIR');
+
+    // -------------------------------------------------------------
+    // TEST 15: Master Wilayah - Filter Desa & Kelurahan
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 15: Master Wilayah - Filter Desa / Kelurahan ---');
+    const kecGambir = kecJson.data.find(kc => kc.kode_kecamatan === '31.71.01');
+    const desaRes = await fetch(`${baseUrl}/master/desa?kecamatan_id=${kecGambir.id}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const desaJson = await desaRes.json();
+    assert(desaRes.status === 200, 'Berhasil mengambil desa per kecamatan (status 200)');
+    assert(desaJson.data.some(d => d.kode_desa === '31.71.01.1001'), 'Ditemukan KELURAHAN GAMBIR');
+    const kelGambir = desaJson.data.find(d => d.kode_desa === '31.71.01.1001');
+    assert(kelGambir.kode_pos === '10110', 'Kelurahan Gambir memiliki kode pos 10110');
+
+    // -------------------------------------------------------------
+    // TEST 16: Master Kode Pos - Lookup / Search Kode Pos
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 16: Master Kode Pos - Lookup Kode Pos ---');
+    const kodeposRes = await fetch(`${baseUrl}/master/kodepos/search/55281`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const kodeposJson = await kodeposRes.json();
+    assert(kodeposRes.status === 200, 'Lookup kode pos berhasil (status 200)');
+    assert(kodeposJson.data.length > 0, 'Ditemukan data kode pos 55281');
+    assert(kodeposJson.data[0].provinsi.nama_provinsi === 'DI YOGYAKARTA', 'Kode pos 55281 terhubung ke Provinsi DI YOGYAKARTA');
+    assert(kodeposJson.data[0].kabupaten.nama_kabupaten === 'KABUPATEN SLEMAN', 'Kode pos 55281 terhubung ke Kab Sleman');
+    assert(kodeposJson.data[0].desa.nama_desa === 'CATURTUNGGAL', 'Kode pos 55281 terhubung ke Desa Caturtunggal');
+
+    // -------------------------------------------------------------
+    // TEST 17: Admin Menambahkan Provinsi Baru & Proteksi Non-Admin
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 17: Admin Tambah Provinsi Baru & Proteksi Non-Admin ---');
+    const dynamicKode = `T${Date.now().toString().slice(-4)}`;
+    const forbiddenAddRes = await fetch(`${baseUrl}/master/provinsi`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${doctorTokenRJ}`,
+      },
+      body: JSON.stringify({ kode_provinsi: dynamicKode, nama_provinsi: 'PROVINSI BARU' }),
+    });
+    assert(forbiddenAddRes.status === 403, 'Dokter ditolak (403) saat mencoba menambah master provinsi');
+
+    const adminAddRes = await fetch(`${baseUrl}/master/provinsi`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({ kode_provinsi: dynamicKode, nama_provinsi: 'PROVINSI UJI COBA' }),
+    });
+    const adminAddJson = await adminAddRes.json();
+    assert(adminAddRes.status === 201, 'Admin berhasil menambahkan master provinsi (status 201)');
+
+    if (adminAddJson.data && adminAddJson.data.id) {
+      await fetch(`${baseUrl}/master/provinsi/${adminAddJson.data.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${adminToken}` },
+      });
+    }
+
+    // -------------------------------------------------------------
+    // TEST 18: Mengambil Jadwal Dokter
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 18: Jadwal Dokter Poliklinik ---');
+    const jadwalRes = await fetch(`${baseUrl}/jadwal-dokter?ruangan_id=101`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const jadwalJson = await jadwalRes.json();
+    assert(jadwalRes.status === 200, 'Berhasil mengambil jadwal dokter (status 200)');
+    assert(jadwalJson.data.length > 0, 'Ditemukan jadwal dokter di Poli Penyakit Dalam');
+    const jadwalBudi = jadwalJson.data[0];
+    assert(jadwalBudi.dokter.nama_lengkap.includes('Budi'), 'Jadwal dokter terhubung ke dr. Budi');
+    assert(jadwalBudi.kuota_pasien > 0, 'Jadwal dokter memiliki kuota pasien');
+
+    // -------------------------------------------------------------
+    // TEST 19: Pendaftaran Rawat Jalan - Pasien Baru (Umum)
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 19: Pendaftaran Rawat Jalan Pasien Baru (Umum) ---');
+    const uniqueNik = `3201${Date.now().toString().slice(-12)}`;
+    const regBaruRes = await fetch(`${baseUrl}/pendaftaran/rawat-jalan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        tipe_pasien: 'BARU',
+        pasien_baru: {
+          nik: uniqueNik,
+          nama_lengkap: 'Budi Darmawan',
+          jenis_kelamin: 'L',
+          tempat_lahir: 'Jakarta',
+          tanggal_lahir: '1995-04-10',
+          golongan_darah: 'A',
+          agama: 'ISLAM',
+          status_pernikahan: 'BELUM_MENIKAH',
+          alamat_lengkap: 'Jl. Sudirman Kav 20, Jakarta',
+          provinsi_id: 1,
+          kabupaten_id: 1,
+          kecamatan_id: 1,
+          desa_id: 1,
+          kode_pos: '10110',
+          nama_penanggung_jawab: 'Darmawan',
+          hubungan_penanggung_jawab: 'ORANG_TUA',
+          telepon_penanggung_jawab: '081234567800',
+        },
+        jadwal_dokter_id: jadwalBudi.id,
+        jenis_penjamin: 'UMUM',
+        keluhan_utama: 'Demam tinggi sejak 3 hari yang lalu',
+      }),
+    });
+    const regBaruJson = await regBaruRes.json();
+    assert(regBaruRes.status === 201, 'Pendaftaran pasien baru berhasil status 201');
+    assert(!!regBaruJson.data.no_registrasi, 'Menerima nomor registrasi rawat jalan');
+    assert(!!regBaruJson.data.no_antrean, 'Menerima nomor antrean poliklinik');
+    assert(regBaruJson.data.tipe_pasien === 'BARU', 'Tipe pasien tercatat BARU');
+    assert(!!regBaruJson.data.pasien.no_rm, 'Pasien baru otomatis memperoleh No RM');
+    assert(regBaruJson.data.status_antrean === 'MENUNGGU', 'Status awal antrean adalah MENUNGGU');
+
+    const regId1 = regBaruJson.data.id;
+
+    // -------------------------------------------------------------
+    // TEST 20: Pendaftaran Rawat Jalan - Pasien Lama (BPJS)
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 20: Pendaftaran Rawat Jalan Pasien Lama (BPJS) ---');
+    const pasienListRes = await fetch(`${baseUrl}/pasien?search=Aminah`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const pasienListJson = await pasienListRes.json();
+    assert(pasienListJson.rows.length > 0, 'Ditemukan pasien Siti Aminah');
+    const siti = pasienListJson.rows[0];
+
+    const regLamaRes = await fetch(`${baseUrl}/pendaftaran/rawat-jalan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        tipe_pasien: 'LAMA',
+        pasien_id: siti.id,
+        jadwal_dokter_id: jadwalBudi.id,
+        jenis_penjamin: 'BPJS',
+        no_kartu_penjamin: '0001234567890',
+        keluhan_utama: 'Kontrol rutin hipertensi',
+      }),
+    });
+    const regLamaJson = await regLamaRes.json();
+    assert(regLamaRes.status === 201, 'Pendaftaran pasien lama berhasil status 201');
+    assert(regLamaJson.data.pasien.id === siti.id, 'Data pendaftaran terhubung ke pasien Siti Aminah');
+    assert(regLamaJson.data.jenis_penjamin === 'BPJS', 'Jenis penjamin tercatat BPJS');
+    assert(regLamaJson.data.angka_antrean > regBaruJson.data.angka_antrean, 'Nomor antrean bertambah secara sekuensial');
+
+    // -------------------------------------------------------------
+    // TEST 21: Update Status Antrean Rawat Jalan
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 21: Update Status Antrean Rawat Jalan ---');
+    const updateStatusRes = await fetch(`${baseUrl}/pendaftaran/rawat-jalan/${regId1}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        status_antrean: 'DIPANGGIL',
+        catatan: 'Pasien dipanggil menuju ruang pemeriksaan Poli Penyakit Dalam',
+      }),
+    });
+    const updateStatusJson = await updateStatusRes.json();
+    assert(updateStatusRes.status === 200, 'Berhasil update status antrean (status 200)');
+    assert(updateStatusJson.data.status_antrean === 'DIPANGGIL', 'Status antrean berubah menjadi DIPANGGIL');
+
+    // -------------------------------------------------------------
+    // TEST 22: Proteksi Validasi Duplikasi Kunjungan Pasien
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 22: Proteksi Duplikasi Kunjungan Hari yang Sama ---');
+    const duplicateRes = await fetch(`${baseUrl}/pendaftaran/rawat-jalan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        tipe_pasien: 'LAMA',
+        pasien_id: siti.id,
+        jadwal_dokter_id: jadwalBudi.id,
+        jenis_penjamin: 'BPJS',
+      }),
+    });
+    assert(duplicateRes.status === 409, 'Pendaftaran duplikat ditolak dengan status 409 Conflict');
+
+    // Cleanup data uji coba pendaftaran agar tes dapat dijalankan berulang secara idempotent
+    const { PendaftaranRawatJalan: PRJ, Pasien: PasienModel } = require('../models');
+    await PRJ.destroy({ where: { id: [regId1, regLamaJson.data ? regLamaJson.data.id : null] }, force: true });
+    if (regBaruJson.data && regBaruJson.data.pasien) {
+      await PasienModel.destroy({ where: { id: regBaruJson.data.pasien.id }, force: true });
+    }
+
   } catch (error) {
     console.error('Terjadi error saat eksekusi test:', error);
     testsFailed++;

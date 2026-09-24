@@ -1,4 +1,6 @@
 const bcrypt = require('bcrypt');
+const seedWilayah = require('./wilayah_seeder');
+const seedPendaftaran = require('./pendaftaran_seeder');
 const {
   sequelize,
   User,
@@ -156,6 +158,7 @@ async function runSeeder(closeConnection = false) {
       { id: 51, modul_id: 6, parent_id: 50, kode_menu: 'ADM_USERS', nama_menu: 'Manajemen Pengguna', icon: 'user-check', path: '/pengaturan/users', order_index: 91 },
       { id: 52, modul_id: 6, parent_id: 50, kode_menu: 'ADM_RUANGAN', nama_menu: 'Instalasi & Ruangan', icon: 'home', path: '/pengaturan/ruangan', order_index: 92 },
       { id: 53, modul_id: 6, parent_id: 50, kode_menu: 'ADM_ROLES', nama_menu: 'Role & Hak Akses', icon: 'shield', path: '/pengaturan/roles', order_index: 93 },
+      { id: 54, modul_id: 6, parent_id: 50, kode_menu: 'ADM_WILAYAH', nama_menu: 'Master Wilayah & Kodepos', icon: 'map-pin', path: '/pengaturan/wilayah', order_index: 94 },
     ];
 
     for (const m of menuData) {
@@ -288,6 +291,12 @@ async function runSeeder(closeConnection = false) {
     ];
     await UserRuanganModul.bulkCreate(userModulRows, { transaction: t });
 
+    // 12. SEED MASTER WILAYAH & KODE POS
+    await seedWilayah(t);
+
+    // 13. SEED JADWAL DOKTER & PASIEN DEMO
+    await seedPendaftaran(t);
+
     await t.commit();
 
     // Sinkronkan sequence serial auto-increment PostgreSQL
@@ -302,6 +311,13 @@ async function runSeeder(closeConnection = false) {
     await sequelize.query("SELECT setval('modul_instalasi_id_seq', COALESCE((SELECT MAX(id) FROM modul_instalasi), 1));");
     await sequelize.query("SELECT setval('modul_ruangan_id_seq', COALESCE((SELECT MAX(id) FROM modul_ruangan), 1));");
     await sequelize.query("SELECT setval('user_ruangan_modul_id_seq', COALESCE((SELECT MAX(id) FROM user_ruangan_modul), 1));");
+    await sequelize.query("SELECT setval('provinsi_id_seq', COALESCE((SELECT MAX(id) FROM provinsi), 1));");
+    await sequelize.query("SELECT setval('kabupaten_kota_id_seq', COALESCE((SELECT MAX(id) FROM kabupaten_kota), 1));");
+    await sequelize.query("SELECT setval('kecamatan_id_seq', COALESCE((SELECT MAX(id) FROM kecamatan), 1));");
+    await sequelize.query("SELECT setval('desa_kelurahan_id_seq', COALESCE((SELECT MAX(id) FROM desa_kelurahan), 1));");
+    await sequelize.query("SELECT setval('kode_pos_id_seq', COALESCE((SELECT MAX(id) FROM kode_pos), 1));");
+    await sequelize.query("SELECT setval('jadwal_dokter_id_seq', COALESCE((SELECT MAX(id) FROM jadwal_dokter), 1));");
+    await sequelize.query("SELECT setval('pendaftaran_rawat_jalan_id_seq', COALESCE((SELECT MAX(id) FROM pendaftaran_rawat_jalan), 1));");
 
     console.log('✓ Seeding database SIMRS & Modul berhasil dengan sukses!');
     console.log('\n--- Daftar Akun Demo SIMRS ---');

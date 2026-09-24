@@ -75,6 +75,14 @@ Struktur menu akan otomatis berganti ke modul ruangan baru tanpa meminta kata sa
 - **RoleMenu**: Menentukan menu apa saja yang boleh diakses oleh Role tertentu
 - **Permissions**: Hak aksi granular (`emr:read`, `resep:create`, `kasir:pay`)
 - **RolePermission**: Mapping hak aksi ke role
+- **Provinsi**: Master wilayah provinsi (`id`, `kode_provinsi`, `nama_provinsi`)
+- **KabupatenKota**: Master kabupaten/kota (`id`, `provinsi_id`, `kode_kabupaten`, `nama_kabupaten`, `tipe`)
+- **Kecamatan**: Master kecamatan (`id`, `kabupaten_id`, `kode_kecamatan`, `nama_kecamatan`)
+- **DesaKelurahan**: Master desa/kelurahan (`id`, `kecamatan_id`, `kode_desa`, `nama_desa`, `tipe`, `kode_pos`)
+- **KodePos**: Master kodepos terhubung hierarki wilayah (`id`, `kode_pos`, `provinsi_id`, `kabupaten_id`, `kecamatan_id`, `desa_id`)
+- **Pasien**: Master data rekam medis pasien RS (`id`, `no_rm`, `nik`, `nama_lengkap`, `jenis_kelamin`, `tanggal_lahir`, `alamat_lengkap`, `provinsi_id`, `kabupaten_id`, `penanggung_jawab`, `jenis_penjamin_default`)
+- **JadwalDokter**: Jadwal praktik poliklinik dokter (`id`, `dokter_id`, `ruangan_id`, `hari`, `jam_mulai`, `jam_selesai`, `kuota_pasien`)
+- **PendaftaranRawatJalan**: Transaksi pendaftaran rawat jalan (`id`, `no_registrasi`, `no_antrean`, `pasien_id`, `tipe_pasien: BARU/LAMA`, `jadwal_dokter_id`, `ruangan_id`, `tanggal_kunjungan`, `jenis_penjamin`, `status_antrean`)
 
 ---
 
@@ -167,3 +175,30 @@ Aplikasi ini sudah dilengkapi dengan fitur **Auto-Bootstrap Database & Auto-Seed
 - `POST /api/modul/assign-ruangan`: Atur daftar modul aktif untuk suatu Ruangan (Admin).
 - `POST /api/modul/assign-user-ruangan`: Atur hak akses modul secara spesifik untuk Akun Pengguna di Ruangan tertentu (Admin).
 - `GET /api/modul/my-modules`: Daftar modul yang berhak diakses oleh akun pengguna pada sesi ruangan saat ini.
+
+### 5. Master Data Wilayah Administratif & Kode Pos (`/api/master` & `/api/wilayah`)
+- `GET /api/master/provinsi`: Daftar provinsi (opsi: `?search=`, `?include_kabupaten=true`).
+- `POST /api/master/provinsi`: Tambah provinsi baru (Admin).
+- `GET /api/master/kabupaten`: Daftar kabupaten/kota (opsi: `?provinsi_id=X&search=`).
+- `POST /api/master/kabupaten`: Tambah kabupaten/kota baru (Admin).
+- `GET /api/master/kecamatan`: Daftar kecamatan (opsi: `?kabupaten_id=X&search=`).
+- `POST /api/master/kecamatan`: Tambah kecamatan baru (Admin).
+- `GET /api/master/desa`: Daftar desa/kelurahan (opsi: `?kecamatan_id=X&kode_pos=X&search=`).
+- `POST /api/master/desa`: Tambah desa/kelurahan baru (Admin).
+- `GET /api/master/kodepos`: Daftar master kode pos lengkap beserta hierarki wilayah.
+- `GET /api/master/kodepos/search/:kodePos`: Pencarian wilayah lengkap langsung berdasarkan 5-digit Kode Pos (contoh: `/api/master/kodepos/search/55281`).
+- `POST /api/master/kodepos`: Tambah mapping kode pos baru (Admin).
+
+### 6. Pendaftaran Rawat Jalan, Pasien & Jadwal Dokter
+- `GET /api/pasien`: Cari data pasien (`?search=nama/no_rm/nik`, `?page=1&limit=20`).
+- `GET /api/pasien/:id`: Detail profil pasien, riwayat kunjungan rawat jalan, dan alamat lengkap.
+- `POST /api/pasien`: Registrasi master pasien baru (No RM dibuat otomatis).
+- `PUT /api/pasien/:id`: Perbarui data identitas pasien.
+- `GET /api/jadwal-dokter`: Daftar jadwal praktik dokter (`?ruangan_id=X&dokter_id=X&hari=SENIN`).
+- `POST /api/jadwal-dokter`: Tambah jadwal praktik dokter (Admin).
+- `PUT /api/jadwal-dokter/:id`: Perbarui jadwal praktik dokter (Admin).
+- `DELETE /api/jadwal-dokter/:id`: Hapus jadwal dokter (Admin).
+- `POST /api/pendaftaran/rawat-jalan`: Pendaftaran rawat jalan (Pasien Baru atau Pasien Lama, otomatis validasi kuota dokter, generate No. Antrean dan No. Registrasi).
+- `GET /api/pendaftaran/rawat-jalan`: Daftar antrean kunjungan (`?tanggal_kunjungan=YYYY-MM-DD&ruangan_id=X&status_antrean=MENUNGGU`).
+- `GET /api/pendaftaran/rawat-jalan/:id`: Detail pendaftaran rawat jalan.
+- `PATCH /api/pendaftaran/rawat-jalan/:id/status`: Update status antrean (`MENUNGGU` -> `DIPANGGIL` -> `SEDANG_DILAYANI` -> `SELESAI` -> `BATAL`).
