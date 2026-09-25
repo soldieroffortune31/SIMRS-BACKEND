@@ -3,8 +3,8 @@ const sequelize = require('../config/database');
 
 const User = sequelize.define('User', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
     primaryKey: true,
   },
   username: {
@@ -46,7 +46,6 @@ const User = sequelize.define('User', {
   tableName: 'users',
   paranoid: true,
 });
-
 
 User.associate = (models) => {
   User.hasMany(models.UserRuanganRole, {

@@ -8,7 +8,7 @@ const UserRuanganModul = sequelize.define('UserRuanganModul', {
     primaryKey: true,
   },
   user_id: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'users',
@@ -52,7 +52,6 @@ const UserRuanganModul = sequelize.define('UserRuanganModul', {
     },
   ],
 });
-
 
 UserRuanganModul.associate = (models) => {
   UserRuanganModul.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });

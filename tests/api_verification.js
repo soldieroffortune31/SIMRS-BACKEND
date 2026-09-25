@@ -307,7 +307,7 @@ async function runTests() {
     // TEST 17: Admin Menambahkan Provinsi Baru & Proteksi Non-Admin
     // -------------------------------------------------------------
     console.log('\n--- TEST 17: Admin Tambah Provinsi Baru & Proteksi Non-Admin ---');
-    const dynamicKode = `T${Date.now().toString().slice(-4)}`;
+    const dynamicKode = `T${Date.now().toString().slice(-8)}`;
     const forbiddenAddRes = await fetch(`${baseUrl}/master/provinsi`, {
       method: 'POST',
       headers: {
@@ -511,6 +511,249 @@ async function runTests() {
       headers: { 'Authorization': `Bearer ${pendaftaranToken}` },
     });
     assert(forbiddenKasirRes.status === 403, 'Petugas pendaftaran ditolak (403) saat mencoba mengakses fitur Kasir Tagihan');
+
+    // -------------------------------------------------------------
+    // TEST 25: Master Pasien CRUD & Search Dedicated Endpoints (/api/pasien)
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 25: Master Pasien Dedicated Endpoints (/api/pasien) ---');
+    const dedicatedNik = `3171${Date.now().toString().slice(-12)}`;
+
+    // 1. Create Pasien
+    const createPasienRes = await fetch(`${baseUrl}/pasien`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        nik: dedicatedNik,
+        nama_lengkap: 'Ahmad Fauzi Dedicated',
+        jenis_kelamin: 'L',
+        tempat_lahir: 'Jakarta',
+        tanggal_lahir: '1990-08-17',
+        golongan_darah: 'O',
+        alamat_lengkap: 'Jl. Merdeka No. 45',
+        no_telepon: '081234567890',
+        jenis_penjamin_default: 'UMUM',
+      }),
+    });
+    const createPasienJson = await createPasienRes.json();
+    assert(createPasienRes.status === 201, 'POST /api/pasien berhasil membuat pasien baru (status 201)');
+    assert(!!createPasienJson.data.id && typeof createPasienJson.data.id === 'number', 'Pasien baru memiliki ID Auto-Increment (Integer)');
+    assert(createPasienJson.data.no_rm.startsWith('RM-'), 'Nomor RM otomatis digenerate');
+    const dedicatedPasienId = createPasienJson.data.id;
+    const dedicatedNoRM = createPasienJson.data.no_rm;
+
+    // 2. Get Pasien By ID
+    const getByIdRes = await fetch(`${baseUrl}/pasien/${dedicatedPasienId}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const getByIdJson = await getByIdRes.json();
+    assert(getByIdRes.status === 200, 'GET /api/pasien/:id berhasil (status 200)');
+    assert(getByIdJson.data.nama_lengkap === 'Ahmad Fauzi Dedicated', 'Data nama pasien sesuai');
+
+    // 3. Get Pasien By No RM
+    const getByNoRMRes = await fetch(`${baseUrl}/pasien/no-rm/${dedicatedNoRM}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const getByNoRMJson = await getByNoRMRes.json();
+    assert(getByNoRMRes.status === 200, 'GET /api/pasien/no-rm/:no_rm berhasil (status 200)');
+    assert(getByNoRMJson.data.id === dedicatedPasienId, 'Data pasien berdasarkan No RM cocok');
+
+    // 4. Get Pasien By NIK
+    const getByNikRes = await fetch(`${baseUrl}/pasien/nik/${dedicatedNik}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const getByNikJson = await getByNikRes.json();
+    assert(getByNikRes.status === 200, 'GET /api/pasien/nik/:nik berhasil (status 200)');
+    assert(getByNikJson.data.id === dedicatedPasienId, 'Data pasien berdasarkan NIK cocok');
+
+    // 5. Update Pasien
+    const updatePasienRes = await fetch(`${baseUrl}/pasien/${dedicatedPasienId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        no_telepon: '089999999999',
+      }),
+    });
+    const updatePasienJson = await updatePasienRes.json();
+    assert(updatePasienRes.status === 200, 'PUT /api/pasien/:id berhasil memperbarui data (status 200)');
+    assert(updatePasienJson.data.no_telepon === '089999999999', 'Nomor telepon berhasil diperbarui');
+
+    // 6. Delete Pasien (Soft Delete)
+    const deletePasienRes = await fetch(`${baseUrl}/pasien/${dedicatedPasienId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    assert(deletePasienRes.status === 200, 'DELETE /api/pasien/:id berhasil (status 200)');
+
+    // 7. Verify Soft Deleted Pasien is 404
+    const getDeletedRes = await fetch(`${baseUrl}/pasien/${dedicatedPasienId}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    assert(getDeletedRes.status === 404, 'GET /api/pasien/:id yang telah dihapus menghasilkan 404 Not Found');
+
+    // Permanent Cleanup Pasien
+    const { Pasien: PasienCleanup } = require('../models');
+    await PasienCleanup.destroy({ where: { id: dedicatedPasienId }, force: true });
+
+    // -------------------------------------------------------------
+    // TEST 26: Master Jadwal Dokter CRUD & Proteksi Admin (/api/jadwal-dokter)
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 26: Master Jadwal Dokter Dedicated Endpoints (/api/jadwal-dokter) ---');
+    // Non-Admin (Petugas Pendaftaran) coba tambah jadwal dokter -> 403
+    const forbiddenJadwalRes = await fetch(`${baseUrl}/jadwal-dokter`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${pendaftaranToken}`,
+      },
+      body: JSON.stringify({
+        dokter_id: jadwalBudi.dokter_id,
+        ruangan_id: 101,
+        hari: 'MINGGU',
+        jam_mulai: '08:00',
+        jam_selesai: '12:00',
+        kuota_pasien: 15,
+      }),
+    });
+    assert(forbiddenJadwalRes.status === 403, 'Petugas non-admin ditolak (403) saat menambah jadwal dokter');
+
+    // Admin tambah jadwal dokter -> 201
+    const createJadwalRes = await fetch(`${baseUrl}/jadwal-dokter`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        dokter_id: jadwalBudi.dokter_id,
+        ruangan_id: 101,
+        hari: 'MINGGU',
+        jam_mulai: '08:00',
+        jam_selesai: '12:00',
+        kuota_pasien: 15,
+      }),
+    });
+    const createJadwalJson = await createJadwalRes.json();
+    assert(createJadwalRes.status === 201, 'Admin berhasil menambahkan jadwal dokter baru (status 201)');
+    assert(createJadwalJson.data.hari === 'MINGGU', 'Hari jadwal dokter tercatat MINGGU');
+    const newJadwalId = createJadwalJson.data.id;
+
+    // Get Jadwal Dokter by ID -> 200
+    const getJadwalRes = await fetch(`${baseUrl}/jadwal-dokter/${newJadwalId}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    const getJadwalJson = await getJadwalRes.json();
+    assert(getJadwalRes.status === 200, 'GET /api/jadwal-dokter/:id berhasil (status 200)');
+    assert(getJadwalJson.data.kuota_pasien === 15, 'Kuota pasien jadwal baru sesuai');
+
+    // Update Jadwal Dokter -> 200
+    const updateJadwalRes = await fetch(`${baseUrl}/jadwal-dokter/${newJadwalId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        kuota_pasien: 20,
+      }),
+    });
+    const updateJadwalJson = await updateJadwalRes.json();
+    assert(updateJadwalRes.status === 200, 'PUT /api/jadwal-dokter/:id berhasil (status 200)');
+    assert(updateJadwalJson.data.kuota_pasien === 20, 'Kuota pasien berhasil diperbarui menjadi 20');
+
+    // Delete Jadwal Dokter -> 200
+    const deleteJadwalRes = await fetch(`${baseUrl}/jadwal-dokter/${newJadwalId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    assert(deleteJadwalRes.status === 200, 'DELETE /api/jadwal-dokter/:id berhasil (status 200)');
+
+    // Verify deleted schedule -> 404
+    const getDeletedJadwalRes = await fetch(`${baseUrl}/jadwal-dokter/${newJadwalId}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    assert(getDeletedJadwalRes.status === 404, 'GET /api/jadwal-dokter/:id yang dihapus menghasilkan 404');
+
+    // -------------------------------------------------------------
+    // TEST 27: Master Instalasi, Ruangan, dan Role Dedicated Endpoints
+    // -------------------------------------------------------------
+    console.log('\n--- TEST 27: Master Instalasi, Ruangan & Role Dedicated Endpoints ---');
+    const uniqueSuffix = Date.now().toString().slice(-6);
+
+    // 1. INSTALASI
+    const newInstalasiRes = await fetch(`${baseUrl}/instalasi`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        kode_instalasi: `INS_${uniqueSuffix}`,
+        nama_instalasi: 'Instalasi Uji Coba Dedicated',
+      }),
+    });
+    const newInstalasiJson = await newInstalasiRes.json();
+    assert(newInstalasiRes.status === 201, 'POST /api/instalasi berhasil status 201');
+    const createdInstalasiId = newInstalasiJson.data.id;
+
+    const getInstalasiRes = await fetch(`${baseUrl}/instalasi/${createdInstalasiId}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    assert(getInstalasiRes.status === 200, 'GET /api/instalasi/:id berhasil status 200');
+
+    // 2. RUANGAN
+    const newRuanganRes = await fetch(`${baseUrl}/ruangan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        instalasi_id: createdInstalasiId,
+        kode_ruangan: `RNG_${uniqueSuffix}`,
+        nama_ruangan: 'Ruangan Uji Coba Dedicated',
+      }),
+    });
+    const newRuanganJson = await newRuanganRes.json();
+    assert(newRuanganRes.status === 201, 'POST /api/ruangan berhasil status 201');
+    const createdRuanganId = newRuanganJson.data.id;
+
+    const getRuanganRes = await fetch(`${baseUrl}/ruangan/${createdRuanganId}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    assert(getRuanganRes.status === 200, 'GET /api/ruangan/:id berhasil status 200');
+
+    // 3. ROLE
+    const newRoleRes = await fetch(`${baseUrl}/roles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        kode_role: `ROLE_${uniqueSuffix}`,
+        nama_role: 'Role Uji Coba Dedicated',
+      }),
+    });
+    const newRoleJson = await newRoleRes.json();
+    assert(newRoleRes.status === 201, 'POST /api/roles berhasil status 201');
+    const createdRoleId = newRoleJson.data.id;
+
+    const getRoleRes = await fetch(`${baseUrl}/roles/${createdRoleId}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    assert(getRoleRes.status === 200, 'GET /api/roles/:id berhasil status 200');
+
+    // Cleanup dedicated test entries
+    const { Instalasi: MInstalasi, Ruangan: MRuangan, Role: MRole } = require('../models');
+    await MRuangan.destroy({ where: { id: createdRuanganId }, force: true });
+    await MInstalasi.destroy({ where: { id: createdInstalasiId }, force: true });
+    await MRole.destroy({ where: { id: createdRoleId }, force: true });
 
     // Cleanup data uji coba pendaftaran agar tes dapat dijalankan berulang secara idempotent
     const { PendaftaranRawatJalan: PRJ, Pasien: PasienModel } = require('../models');

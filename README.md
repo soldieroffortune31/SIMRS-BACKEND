@@ -190,15 +190,23 @@ Aplikasi ini sudah dilengkapi dengan fitur **Auto-Bootstrap Database & Auto-Seed
 - `GET /api/master/kodepos/search/:kodePos`: Pencarian wilayah lengkap langsung berdasarkan 5-digit Kode Pos (contoh: `/api/master/kodepos/search/55281`).
 - `POST /api/master/kodepos`: Tambah mapping kode pos baru (Admin).
 
-### 6. Pendaftaran Rawat Jalan, Pasien & Jadwal Dokter
+### 6. Master Data Pasien (`/api/pasien`)
 - `GET /api/pasien`: Cari data pasien (`?search=nama/no_rm/nik`, `?page=1&limit=20`).
 - `GET /api/pasien/:id`: Detail profil pasien, riwayat kunjungan rawat jalan, dan alamat lengkap.
+- `GET /api/pasien/no-rm/:no_rm`: Pencarian data pasien berdasarkan No. Rekam Medis (No RM).
+- `GET /api/pasien/nik/:nik`: Pencarian data pasien berdasarkan NIK (Nomor Induk Kependudukan).
 - `POST /api/pasien`: Registrasi master pasien baru (No RM dibuat otomatis).
 - `PUT /api/pasien/:id`: Perbarui data identitas pasien.
+- `DELETE /api/pasien/:id`: Hapus / nonaktifkan data pasien (soft delete).
+
+### 7. Master Jadwal Dokter (`/api/jadwal-dokter`)
 - `GET /api/jadwal-dokter`: Daftar jadwal praktik dokter (`?ruangan_id=X&dokter_id=X&hari=SENIN`).
+- `GET /api/jadwal-dokter/:id`: Detail jadwal dokter berdasarkan ID.
 - `POST /api/jadwal-dokter`: Tambah jadwal praktik dokter (Admin).
 - `PUT /api/jadwal-dokter/:id`: Perbarui jadwal praktik dokter (Admin).
 - `DELETE /api/jadwal-dokter/:id`: Hapus jadwal dokter (Admin).
+
+### 8. Pendaftaran Rawat Jalan (`/api/pendaftaran/rawat-jalan`)
 - `POST /api/pendaftaran/rawat-jalan`: Pendaftaran rawat jalan (Pasien Baru atau Pasien Lama, otomatis validasi kuota dokter, generate No. Antrean dan No. Registrasi).
 - `GET /api/pendaftaran/rawat-jalan`: Daftar antrean kunjungan (`?tanggal_kunjungan=YYYY-MM-DD&ruangan_id=X&status_antrean=MENUNGGU`).
 - `GET /api/pendaftaran/rawat-jalan/:id`: Detail pendaftaran rawat jalan.

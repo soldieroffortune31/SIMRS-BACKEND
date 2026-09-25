@@ -324,6 +324,8 @@ async function runSeeder(closeConnection = false) {
     await t.commit();
 
     // Sinkronkan sequence serial auto-increment PostgreSQL
+    await sequelize.query("SELECT setval('users_id_seq', COALESCE((SELECT MAX(id) FROM users), 1));");
+    await sequelize.query("SELECT setval('pasien_id_seq', COALESCE((SELECT MAX(id) FROM pasien), 1));");
     await sequelize.query("SELECT setval('instalasi_id_seq', COALESCE((SELECT MAX(id) FROM instalasi), 1));");
     await sequelize.query("SELECT setval('ruangan_id_seq', COALESCE((SELECT MAX(id) FROM ruangan), 1));");
     await sequelize.query("SELECT setval('roles_id_seq', COALESCE((SELECT MAX(id) FROM roles), 1));");

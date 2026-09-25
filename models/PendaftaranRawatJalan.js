@@ -21,7 +21,7 @@ const PendaftaranRawatJalan = sequelize.define('PendaftaranRawatJalan', {
     allowNull: false,
   },
   pasien_id: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'pasien',
@@ -45,7 +45,7 @@ const PendaftaranRawatJalan = sequelize.define('PendaftaranRawatJalan', {
     onDelete: 'RESTRICT',
   },
   dokter_id: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'users',
@@ -91,7 +91,7 @@ const PendaftaranRawatJalan = sequelize.define('PendaftaranRawatJalan', {
     allowNull: true,
   },
   created_by: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: true,
     references: {
       model: 'users',

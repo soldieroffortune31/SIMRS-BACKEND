@@ -1,17 +1,12 @@
 const Joi = require('joi');
-
-const createInstalasiSchema = Joi.object({
-  kode_instalasi: Joi.string().trim().uppercase().required(),
-  nama_instalasi: Joi.string().trim().required(),
-  is_active: Joi.boolean().default(true),
-});
-
-const createRuanganSchema = Joi.object({
-  instalasi_id: Joi.number().integer().positive().required(),
-  kode_ruangan: Joi.string().trim().uppercase().required(),
-  nama_ruangan: Joi.string().trim().required(),
-  is_active: Joi.boolean().default(true),
-});
+const { createInstalasiSchema, updateInstalasiSchema } = require('./instalasi.validator');
+const { createRuanganSchema, updateRuanganSchema } = require('./ruangan.validator');
+const {
+  createRoleSchema,
+  updateRoleSchema,
+  assignRolePermissionsSchema,
+  assignRoleMenusSchema,
+} = require('./role.validator');
 
 const createUserSchema = Joi.object({
   username: Joi.string().alphanum().min(3).max(30).required(),
@@ -54,14 +49,20 @@ const assignModulRuanganSchema = Joi.object({
 });
 
 const assignModulUserSchema = Joi.object({
-  user_id: Joi.string().uuid().required(),
+  user_id: Joi.number().integer().positive().required(),
   ruangan_id: Joi.number().integer().positive().required(),
   modul_ids: Joi.array().items(Joi.number().integer().positive()).required(),
 });
 
 module.exports = {
   createInstalasiSchema,
+  updateInstalasiSchema,
   createRuanganSchema,
+  updateRuanganSchema,
+  createRoleSchema,
+  updateRoleSchema,
+  assignRolePermissionsSchema,
+  assignRoleMenusSchema,
   createUserSchema,
   assignRuanganSchema,
   createModulSchema,

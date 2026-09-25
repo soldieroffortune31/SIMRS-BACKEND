@@ -11,251 +11,42 @@ const {
   Kecamatan,
   DesaKelurahan,
 } = require('../models');
+const pasienService = require('./pasien.service');
 
 class PendaftaranService {
   // ==========================================
-  // 1. MASTER PASIEN
+  // REGISTRASI / PENDAFTARAN RAWAT JALAN
   // ==========================================
 
   /**
-   * Menghasilkan Nomor Rekam Medis (No RM) berurutan
-   */
-  async generateNoRM(transaction = null) {
-    const lastPatient = await Pasien.findOne({
-      order: [['created_at', 'DESC']],
-      paranoid: false,
-      transaction,
-    });
-
-    let nextNumber = 1;
-    if (lastPatient && lastPatient.no_rm) {
-      const numeric = parseInt(lastPatient.no_rm.replace(/\D/g, ''), 10);
-      if (!isNaN(numeric)) {
-        nextNumber = numeric + 1;
-      }
-    }
-    return `RM-${String(nextNumber).padStart(6, '0')}`;
-  }
-
-  async getAllPasien(query = {}) {
-    console.log('query service', query)
-    const { search, jenis_kelamin, page = 1, limit = 20 } = query;
-    const where = {};
-
-    if (jenis_kelamin) {
-      where.jenis_kelamin = jenis_kelamin;
-    }
-
-    if (search) {
-      where[Op.or] = [
-        { no_rm: { [Op.iLike]: `%${search}%` } },
-        { nik: { [Op.iLike]: `%${search}%` } },
-        { nama_lengkap: { [Op.iLike]: `%${search}%` } },
-        { no_telepon: { [Op.iLike]: `%${search}%` } },
-      ];
-    }
-
-    const take = parseInt(limit, 10);
-    const skip = (parseInt(page, 10) - 1) * take;
-
-    return Pasien.findAndCountAll({
-      where,
-      include: [
-        { model: Provinsi, as: 'provinsi', attributes: ['id', 'nama_provinsi'] },
-        { model: KabupatenKota, as: 'kabupaten', attributes: ['id', 'nama_kabupaten'] },
-        { model: Kecamatan, as: 'kecamatan', attributes: ['id', 'nama_kecamatan'] },
-        { model: DesaKelurahan, as: 'desa', attributes: ['id', 'nama_desa', 'kode_pos'] },
-      ],
-      order: [['created_at', 'DESC']],
-      limit: take,
-      offset: skip,
-    });
-  }
-
-  async getPasienById(id) {
-    const pasien = await Pasien.findByPk(id, {
-      include: [
-        { model: Provinsi, as: 'provinsi' },
-        { model: KabupatenKota, as: 'kabupaten' },
-        { model: Kecamatan, as: 'kecamatan' },
-        { model: DesaKelurahan, as: 'desa' },
-        {
-          model: PendaftaranRawatJalan,
-          as: 'kunjungan_rawat_jalan',
-          limit: 10,
-          order: [['tanggal_kunjungan', 'DESC']],
-          include: [
-            { model: Ruangan, as: 'ruangan', attributes: ['id', 'nama_ruangan'] },
-            { model: User, as: 'dokter', attributes: ['id', 'nama_lengkap'] },
-          ],
-        },
-      ],
-    });
-
-    if (!pasien) {
-      const error = new Error('Data pasien tidak ditemukan.');
-      error.statusCode = 404;
-      throw error;
-    }
-    return pasien;
-  }
-
-  async createPasien(data, transaction = null) {
-    const sanitized = { ...data };
-    for (const key of Object.keys(sanitized)) {
-      if (typeof sanitized[key] === 'string' && sanitized[key].trim() === '') {
-        sanitized[key] = null;
-      }
-    }
-    data = sanitized;
-    if (data.nik) {
-      const existing = await Pasien.findOne({
-        where: { nik: data.nik },
-        paranoid: false,
-        transaction,
-      });
-      if (existing) {
-        const error = new Error(`Pasien dengan NIK ${data.nik} sudah terdaftar dengan No. RM: ${existing.no_rm}.`);
-        error.statusCode = 409;
-        throw error;
-      }
-    }
-
-    const no_rm = await this.generateNoRM(transaction);
-    const payload = {
-      ...data,
-      no_rm,
-    };
-
-    return Pasien.create(payload, { transaction });
-  }
-
-  async updatePasien(id, data) {
-    const pasien = await this.getPasienById(id);
-
-    if (data.nik && data.nik !== pasien.nik) {
-      const existing = await Pasien.findOne({
-        where: { nik: data.nik, id: { [Op.ne]: id } },
-      });
-      if (existing) {
-        const error = new Error(`NIK ${data.nik} sudah terdaftar pada pasien lain.`);
-        error.statusCode = 409;
-        throw error;
-      }
-    }
-
-    return pasien.update(data);
-  }
-
-  // ==========================================
-  // 2. JADWAL DOKTER
-  // ==========================================
-
-  async getAllJadwalDokter(query = {}) {
-    const { ruangan_id, dokter_id, hari, is_active } = query;
-    const where = {};
-
-    if (ruangan_id) where.ruangan_id = parseInt(ruangan_id, 10);
-    if (dokter_id) where.dokter_id = dokter_id;
-    if (hari) where.hari = hari.toUpperCase();
-    if (is_active !== undefined) {
-      where.is_active = is_active === 'true' || is_active === true;
-    }
-
-    return JadwalDokter.findAll({
-      where,
-      include: [
-        {
-          model: User,
-          as: 'dokter',
-          attributes: ['id', 'username', 'nama_lengkap', 'nip_nik'],
-        },
-        {
-          model: Ruangan,
-          as: 'ruangan',
-          attributes: ['id', 'kode_ruangan', 'nama_ruangan', 'instalasi_id'],
-        },
-      ],
-      order: [
-        ['hari', 'ASC'],
-        ['jam_mulai', 'ASC'],
-      ],
-    });
-  }
-
-  async getJadwalDokterById(id) {
-    const jadwal = await JadwalDokter.findByPk(id, {
-      include: [
-        { model: User, as: 'dokter', attributes: ['id', 'username', 'nama_lengkap', 'nip_nik'] },
-        { model: Ruangan, as: 'ruangan', attributes: ['id', 'kode_ruangan', 'nama_ruangan'] },
-      ],
-    });
-
-    if (!jadwal) {
-      const error = new Error('Jadwal dokter tidak ditemukan.');
-      error.statusCode = 404;
-      throw error;
-    }
-    return jadwal;
-  }
-
-  async createJadwalDokter(data) {
-    const dokter = await User.findByPk(data.dokter_id);
-    if (!dokter) {
-      const error = new Error('Akun Dokter tidak ditemukan.');
-      error.statusCode = 404;
-      throw error;
-    }
-
-    const ruangan = await Ruangan.findByPk(data.ruangan_id);
-    if (!ruangan) {
-      const error = new Error('Ruangan / Poliklinik tidak ditemukan.');
-      error.statusCode = 404;
-      throw error;
-    }
-
-    return JadwalDokter.create(data);
-  }
-
-  async updateJadwalDokter(id, data) {
-    const jadwal = await this.getJadwalDokterById(id);
-    return jadwal.update(data);
-  }
-
-  async deleteJadwalDokter(id) {
-    const jadwal = await this.getJadwalDokterById(id);
-    await jadwal.destroy();
-    return { id, message: 'Jadwal dokter berhasil dihapus.' };
-  }
-
-  // ==========================================
-  // 3. PENDAFTARAN RAWAT JALAN
-  // ==========================================
-
-  /**
-   * Pendaftaran Pasien Rawat Jalan (Mendukung Pasien Baru dan Lama)
+   * Pendaftaran Pasien Rawat Jalan (Poliklinik)
+   * Mendukung alur:
+   * 1. Pasien Baru (input form pasien baru, auto-create Master Pasien & generate No RM)
+   * 2. Pasien Lama (menggunakan pasien_id yang sudah ada)
+   * 3. Validasi kuota dokter & duplikasi kunjungan di hari yang sama
+   * 4. Pembuatan No. Antrean & No. Registrasi unik
    */
   async daftarRawatJalan(data, createdByUserId = null) {
     const t = await sequelize.transaction();
 
     try {
-      // 1. Validasi Jadwal Dokter Aktif
+      // 1. Validasi Keberadaan & Keaktifan Jadwal Dokter
       const jadwal = await JadwalDokter.findByPk(data.jadwal_dokter_id, {
         include: [
-          { model: User, as: 'dokter' },
           { model: Ruangan, as: 'ruangan' },
+          { model: User, as: 'dokter' },
         ],
         transaction: t,
       });
 
       if (!jadwal || !jadwal.is_active) {
-        const error = new Error('Jadwal dokter yang dipilih tidak aktif atau tidak ditemukan.');
-        error.statusCode = 400;
+        const error = new Error('Jadwal dokter tidak aktif atau tidak ditemukan.');
+        error.statusCode = 404;
         throw error;
       }
 
-      // 2. Tanggal Kunjungan
-      let rawTgl = data.tanggal_kunjungan || new Date();
+      // 2. Format & Validasi Tanggal Kunjungan
+      const rawTgl = data.tanggal_kunjungan || new Date();
       const tanggalKunjungan = rawTgl instanceof Date ? rawTgl.toISOString().split('T')[0] : String(rawTgl).split('T')[0];
 
       // 3. Pengecekan Kuota Pasien pada Jadwal Tersebut
@@ -286,7 +77,7 @@ class PendaftaranService {
           error.statusCode = 400;
           throw error;
         }
-        pasienRecord = await this.createPasien(
+        pasienRecord = await pasienService.createPasien(
           {
             ...data.pasien_baru,
             jenis_penjamin_default: data.jenis_penjamin,

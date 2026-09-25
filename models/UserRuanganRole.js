@@ -8,7 +8,7 @@ const UserRuanganRole = sequelize.define('UserRuanganRole', {
     primaryKey: true,
   },
   user_id: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'users',
@@ -51,7 +51,6 @@ const UserRuanganRole = sequelize.define('UserRuanganRole', {
     },
   ],
 });
-
 
 UserRuanganRole.associate = (models) => {
   UserRuanganRole.belongsTo(models.User, {

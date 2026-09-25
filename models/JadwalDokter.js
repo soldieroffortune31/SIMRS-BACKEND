@@ -8,7 +8,7 @@ const JadwalDokter = sequelize.define('JadwalDokter', {
     primaryKey: true,
   },
   dokter_id: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'users',

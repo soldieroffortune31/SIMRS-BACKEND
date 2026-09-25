@@ -1,103 +1,53 @@
-const {
-  Instalasi,
-  Ruangan,
-  Role,
-  Permission,
-  RoleMenu,
-  RolePermission,
-  Menu,
-} = require('../models');
+const instalasiService = require('./instalasi.service');
+const ruanganService = require('./ruangan.service');
+const roleService = require('./role.service');
 
 class MasterService {
   // --- INSTALASI ---
   async getAllInstalasi(includeRuangan = false) {
-    const options = {
-      order: [['id', 'ASC']],
-    };
-    if (includeRuangan) {
-      options.include = [
-        {
-          model: Ruangan,
-          as: 'ruangan',
-          where: { is_active: true },
-          required: false,
-        },
-      ];
-    }
-    return Instalasi.findAll(options);
+    return instalasiService.getAllInstalasi(includeRuangan);
+  }
+
+  async getInstalasiById(id) {
+    return instalasiService.getInstalasiById(id);
   }
 
   async createInstalasi(data) {
-    return Instalasi.create(data);
+    return instalasiService.createInstalasi(data);
   }
 
   // --- RUANGAN ---
   async getAllRuangan(instalasiId = null) {
-    const where = {};
-    if (instalasiId) {
-      where.instalasi_id = instalasiId;
-    }
-    return Ruangan.findAll({
-      where,
-      include: [
-        {
-          model: Instalasi,
-          as: 'instalasi',
-          attributes: ['id', 'kode_instalasi', 'nama_instalasi'],
-        },
-      ],
-      order: [['id', 'ASC']],
-    });
+    return ruanganService.getAllRuangan(instalasiId);
+  }
+
+  async getRuanganById(id) {
+    return ruanganService.getRuanganById(id);
   }
 
   async createRuangan(data) {
-    const instalasi = await Instalasi.findByPk(data.instalasi_id);
-    if (!instalasi) {
-      const error = new Error('Instalasi tidak ditemukan.');
-      error.statusCode = 404;
-      throw error;
-    }
-    return Ruangan.create(data);
+    return ruanganService.createRuangan(data);
   }
 
   // --- ROLES & PERMISSIONS ---
   async getAllRoles() {
-    return Role.findAll({
-      include: [
-        {
-          model: Permission,
-          as: 'permissions',
-          through: { attributes: [] },
-        },
-      ],
-      order: [['id', 'ASC']],
-    });
+    return roleService.getAllRoles();
+  }
+
+  async getRoleById(id) {
+    return roleService.getRoleById(id);
   }
 
   async createRole(data) {
-    return Role.create(data);
+    return roleService.createRole(data);
   }
 
   async assignPermissionsToRole(roleId, permissionIds) {
-    const role = await Role.findByPk(roleId);
-    if (!role) {
-      const error = new Error('Role tidak ditemukan.');
-      error.statusCode = 404;
-      throw error;
-    }
-    await role.setPermissions(permissionIds);
-    return role.getPermissions();
+    return roleService.assignPermissionsToRole(roleId, permissionIds);
   }
 
   async assignMenusToRole(roleId, menuIds) {
-    const role = await Role.findByPk(roleId);
-    if (!role) {
-      const error = new Error('Role tidak ditemukan.');
-      error.statusCode = 404;
-      throw error;
-    }
-    await role.setMenus(menuIds);
-    return role.getMenus();
+    return roleService.assignMenusToRole(roleId, menuIds);
   }
 }
 
