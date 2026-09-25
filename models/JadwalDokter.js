@@ -66,7 +66,7 @@ JadwalDokter.associate = (models) => {
     foreignKey: 'ruangan_id',
     as: 'ruangan',
   });
-  JadwalDokter.hasMany(models.PendaftaranRawatJalan, {
+  JadwalDokter.hasMany(models.Pendaftaran, {
     foreignKey: 'jadwal_dokter_id',
     as: 'pendaftaran_list',
   });

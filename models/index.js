@@ -26,6 +26,11 @@ Object.keys(db).forEach((modelName) => {
   }
 });
 
+// 3. Backward compatibility alias: PendaftaranRawatJalan -> Pendaftaran
+if (db.Pendaftaran && !db.PendaftaranRawatJalan) {
+  db.PendaftaranRawatJalan = db.Pendaftaran;
+}
+
 db.sequelize = sequelize;
 
 module.exports = db;

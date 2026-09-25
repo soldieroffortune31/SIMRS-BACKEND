@@ -34,4 +34,24 @@ router.patch(
   pendaftaranController.updateStatusPendaftaran
 );
 
+// ==========================================
+// ENDPOINT PENDAFTARAN UMUM (SEMUA LAYANAN)
+// ==========================================
+router.get(
+  '/',
+  authMiddleware,
+  pendaftaranController.getAllPendaftaran
+);
+router.get(
+  '/:id',
+  authMiddleware,
+  pendaftaranController.getPendaftaranById
+);
+router.patch(
+  '/:id/status',
+  authMiddleware,
+  validate(updateStatusPendaftaranSchema),
+  pendaftaranController.updateStatusPendaftaran
+);
+
 module.exports = router;

@@ -394,6 +394,7 @@ async function runTests() {
     assert(regBaruJson.data.tipe_pasien === 'BARU', 'Tipe pasien tercatat BARU');
     assert(!!regBaruJson.data.pasien.no_rm, 'Pasien baru otomatis memperoleh No RM');
     assert(regBaruJson.data.status_antrean === 'MENUNGGU', 'Status awal antrean adalah MENUNGGU');
+    assert(regBaruJson.data.jenis_pelayanan === 'RAWAT_JALAN', 'Jenis pelayanan tercatat RAWAT_JALAN pada tabel pendaftaran terpadu');
 
     const regId1 = regBaruJson.data.id;
 
@@ -447,6 +448,14 @@ async function runTests() {
     const updateStatusJson = await updateStatusRes.json();
     assert(updateStatusRes.status === 200, 'Berhasil update status antrean (status 200)');
     assert(updateStatusJson.data.status_antrean === 'DIPANGGIL', 'Status antrean berubah menjadi DIPANGGIL');
+
+    // Test Generic /pendaftaran endpoint
+    const genericRes = await fetch(`${baseUrl}/pendaftaran`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+    });
+    assert(genericRes.status === 200, 'GET /pendaftaran generic endpoint berhasil (status 200)');
+    const genericJson = await genericRes.json();
+    assert(genericJson.rows.length > 0, 'Daftar pendaftaran terpadu mengembalikan data');
 
     // -------------------------------------------------------------
     // TEST 22: Proteksi Validasi Duplikasi Kunjungan Pasien
@@ -756,7 +765,7 @@ async function runTests() {
     await MRole.destroy({ where: { id: createdRoleId }, force: true });
 
     // Cleanup data uji coba pendaftaran agar tes dapat dijalankan berulang secara idempotent
-    const { PendaftaranRawatJalan: PRJ, Pasien: PasienModel } = require('../models');
+    const { Pendaftaran: PRJ, Pasien: PasienModel } = require('../models');
     await PRJ.destroy({ where: { id: [regId1, regLamaJson.data ? regLamaJson.data.id : null] }, force: true });
     if (regBaruJson.data && regBaruJson.data.pasien) {
       await PasienModel.destroy({ where: { id: regBaruJson.data.pasien.id }, force: true });

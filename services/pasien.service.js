@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const {
   sequelize,
   Pasien,
-  PendaftaranRawatJalan,
+  Pendaftaran,
   User,
   Ruangan,
   Provinsi,
@@ -84,7 +84,7 @@ class PasienService {
         { model: Kecamatan, as: 'kecamatan' },
         { model: DesaKelurahan, as: 'desa' },
         {
-          model: PendaftaranRawatJalan,
+          model: Pendaftaran,
           as: 'kunjungan_rawat_jalan',
           limit: 10,
           order: [['tanggal_kunjungan', 'DESC']],
@@ -116,7 +116,7 @@ class PasienService {
         { model: Kecamatan, as: 'kecamatan' },
         { model: DesaKelurahan, as: 'desa' },
         {
-          model: PendaftaranRawatJalan,
+          model: Pendaftaran,
           as: 'kunjungan_rawat_jalan',
           limit: 10,
           order: [['tanggal_kunjungan', 'DESC']],
@@ -148,7 +148,7 @@ class PasienService {
         { model: Kecamatan, as: 'kecamatan' },
         { model: DesaKelurahan, as: 'desa' },
         {
-          model: PendaftaranRawatJalan,
+          model: Pendaftaran,
           as: 'kunjungan_rawat_jalan',
           limit: 10,
           order: [['tanggal_kunjungan', 'DESC']],

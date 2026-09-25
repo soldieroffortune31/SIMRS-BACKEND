@@ -4,7 +4,7 @@ const {
   Ruangan,
   JadwalDokter,
   Pasien,
-  PendaftaranRawatJalan,
+  Pendaftaran,
 } = require('../models');
 
 async function seedPendaftaran(transaction = null, closeConnection = false) {
@@ -109,7 +109,7 @@ async function seedPendaftaran(transaction = null, closeConnection = false) {
       await t.commit();
       try {
         await sequelize.query("SELECT setval('jadwal_dokter_id_seq', COALESCE((SELECT MAX(id) FROM jadwal_dokter), 1));");
-        await sequelize.query("SELECT setval('pendaftaran_rawat_jalan_id_seq', COALESCE((SELECT MAX(id) FROM pendaftaran_rawat_jalan), 1));");
+        await sequelize.query("SELECT setval('pendaftaran_id_seq', COALESCE((SELECT MAX(id) FROM pendaftaran), 1));");
       } catch (_) {}
       console.log('✓ Seeding Jadwal Dokter & Pasien selesai!');
     }

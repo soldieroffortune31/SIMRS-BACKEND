@@ -1,11 +1,11 @@
 const { Op } = require('sequelize');
 const {
   sequelize,
+  Pendaftaran,
   Pasien,
   JadwalDokter,
-  PendaftaranRawatJalan,
-  User,
   Ruangan,
+  User,
   Provinsi,
   KabupatenKota,
   Kecamatan,
@@ -14,18 +14,9 @@ const {
 const pasienService = require('./pasien.service');
 
 class PendaftaranService {
-  // ==========================================
-  // REGISTRASI / PENDAFTARAN RAWAT JALAN
-  // ==========================================
-
-  /**
-   * Pendaftaran Pasien Rawat Jalan (Poliklinik)
-   * Mendukung alur:
-   * 1. Pasien Baru (input form pasien baru, auto-create Master Pasien & generate No RM)
-   * 2. Pasien Lama (menggunakan pasien_id yang sudah ada)
-   * 3. Validasi kuota dokter & duplikasi kunjungan di hari yang sama
-   * 4. Pembuatan No. Antrean & No. Registrasi unik
-   */
+  // ============================================================
+  // PENDAFTARAN RAWAT JALAN
+  // ============================================================
   async daftarRawatJalan(data, createdByUserId = null) {
     const t = await sequelize.transaction();
 
@@ -50,10 +41,11 @@ class PendaftaranService {
       const tanggalKunjungan = rawTgl instanceof Date ? rawTgl.toISOString().split('T')[0] : String(rawTgl).split('T')[0];
 
       // 3. Pengecekan Kuota Pasien pada Jadwal Tersebut
-      const totalTerdaftar = await PendaftaranRawatJalan.count({
+      const totalTerdaftar = await Pendaftaran.count({
         where: {
           jadwal_dokter_id: jadwal.id,
           tanggal_kunjungan: tanggalKunjungan,
+          jenis_pelayanan: 'RAWAT_JALAN',
           status_antrean: { [Op.ne]: 'BATAL' },
         },
         transaction: t,
@@ -97,11 +89,12 @@ class PendaftaranService {
       }
 
       // 5. Cek apakah pasien sudah mendaftar di poli & tanggal yang sama
-      const duplicateCheck = await PendaftaranRawatJalan.findOne({
+      const duplicateCheck = await Pendaftaran.findOne({
         where: {
           pasien_id: pasienId,
           ruangan_id: jadwal.ruangan_id,
           tanggal_kunjungan: tanggalKunjungan,
+          jenis_pelayanan: 'RAWAT_JALAN',
           status_antrean: { [Op.ne]: 'BATAL' },
         },
         transaction: t,
@@ -116,10 +109,11 @@ class PendaftaranService {
       }
 
       // 6. Generate Nomor Antrean & Nomor Registrasi Hari Tersebut
-      const countRuanganToday = await PendaftaranRawatJalan.count({
+      const countRuanganToday = await Pendaftaran.count({
         where: {
           ruangan_id: jadwal.ruangan_id,
           tanggal_kunjungan: tanggalKunjungan,
+          jenis_pelayanan: 'RAWAT_JALAN',
         },
         transaction: t,
       });
@@ -129,24 +123,29 @@ class PendaftaranService {
 
       // Format No Registrasi: RJ-YYYYMMDD-XXXX
       const dateCompact = tanggalKunjungan.replace(/-/g, '');
-      const countAllToday = await PendaftaranRawatJalan.count({
-        where: { tanggal_kunjungan: tanggalKunjungan },
+      const countAllToday = await Pendaftaran.count({
+        where: {
+          tanggal_kunjungan: tanggalKunjungan,
+          jenis_pelayanan: 'RAWAT_JALAN',
+        },
         transaction: t,
       });
       const noRegistrasi = `RJ-${dateCompact}-${String(countAllToday + 1).padStart(4, '0')}`;
 
-      // 7. Simpan Data Pendaftaran Rawat Jalan
-      const pendaftaran = await PendaftaranRawatJalan.create(
+      // 7. Simpan Data Pendaftaran Terpadu (Tabel Pendaftaran)
+      const pendaftaran = await Pendaftaran.create(
         {
           no_registrasi: noRegistrasi,
           no_antrean: noAntrean,
           angka_antrean: angkaAntrean,
           pasien_id: pasienId,
           tipe_pasien: data.tipe_pasien,
+          jenis_pelayanan: 'RAWAT_JALAN',
           jadwal_dokter_id: jadwal.id,
           dokter_id: jadwal.dokter_id,
           ruangan_id: jadwal.ruangan_id,
           tanggal_kunjungan: tanggalKunjungan,
+          waktu_masuk: new Date(),
           jenis_penjamin: data.jenis_penjamin,
           no_kartu_penjamin: data.no_kartu_penjamin || null,
           keluhan_utama: data.keluhan_utama || null,
@@ -167,8 +166,12 @@ class PendaftaranService {
     }
   }
 
+  // ============================================================
+  // DAFTAR & DETAIL PENDAFTARAN
+  // ============================================================
   async getAllPendaftaran(query = {}) {
     const {
+      jenis_pelayanan,
       tanggal_kunjungan,
       ruangan_id,
       dokter_id,
@@ -180,6 +183,10 @@ class PendaftaranService {
     } = query;
 
     const where = {};
+
+    if (jenis_pelayanan) {
+      where.jenis_pelayanan = jenis_pelayanan;
+    }
 
     if (tanggal_kunjungan) {
       where.tanggal_kunjungan = tanggal_kunjungan;
@@ -228,7 +235,7 @@ class PendaftaranService {
     const take = parseInt(limit, 10);
     const skip = (parseInt(page, 10) - 1) * take;
 
-    return PendaftaranRawatJalan.findAndCountAll({
+    return Pendaftaran.findAndCountAll({
       where,
       include,
       order: [
@@ -241,7 +248,7 @@ class PendaftaranService {
   }
 
   async getPendaftaranById(id) {
-    const pendaftaran = await PendaftaranRawatJalan.findByPk(id, {
+    const pendaftaran = await Pendaftaran.findByPk(id, {
       include: [
         {
           model: Pasien,
@@ -257,11 +264,12 @@ class PendaftaranService {
         { model: Ruangan, as: 'ruangan', attributes: ['id', 'kode_ruangan', 'nama_ruangan'] },
         { model: JadwalDokter, as: 'jadwal_dokter' },
         { model: User, as: 'petugas_admisi', attributes: ['id', 'nama_lengkap', 'username'] },
+        { model: Pendaftaran, as: 'pendaftaran_asal' },
       ],
     });
 
     if (!pendaftaran) {
-      const error = new Error('Data pendaftaran rawat jalan tidak ditemukan.');
+      const error = new Error('Data pendaftaran tidak ditemukan.');
       error.statusCode = 404;
       throw error;
     }

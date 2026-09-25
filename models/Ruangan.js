@@ -69,7 +69,7 @@ Ruangan.associate = (models) => {
     as: 'jadwal_dokter',
   });
 
-  Ruangan.hasMany(models.PendaftaranRawatJalan, {
+  Ruangan.hasMany(models.Pendaftaran, {
     foreignKey: 'ruangan_id',
     as: 'pendaftaran_list',
   });

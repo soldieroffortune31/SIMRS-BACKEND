@@ -65,9 +65,14 @@ User.associate = (models) => {
     as: 'jadwal_praktek',
   });
 
-  User.hasMany(models.PendaftaranRawatJalan, {
+  User.hasMany(models.Pendaftaran, {
     foreignKey: 'dokter_id',
     as: 'pendaftaran_pasien',
+  });
+
+  User.hasMany(models.Pendaftaran, {
+    foreignKey: 'created_by',
+    as: 'pendaftaran_dibuat',
   });
 };
 

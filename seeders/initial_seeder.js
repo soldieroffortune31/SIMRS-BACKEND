@@ -343,7 +343,7 @@ async function runSeeder(closeConnection = false) {
     await sequelize.query("SELECT setval('desa_kelurahan_id_seq', COALESCE((SELECT MAX(id) FROM desa_kelurahan), 1));");
     await sequelize.query("SELECT setval('kode_pos_id_seq', COALESCE((SELECT MAX(id) FROM kode_pos), 1));");
     await sequelize.query("SELECT setval('jadwal_dokter_id_seq', COALESCE((SELECT MAX(id) FROM jadwal_dokter), 1));");
-    await sequelize.query("SELECT setval('pendaftaran_rawat_jalan_id_seq', COALESCE((SELECT MAX(id) FROM pendaftaran_rawat_jalan), 1));");
+    await sequelize.query("SELECT setval('pendaftaran_id_seq', COALESCE((SELECT MAX(id) FROM pendaftaran), 1));");
 
     console.log('✓ Seeding database SIMRS & Modul berhasil dengan sukses!');
     console.log('\n--- Daftar Akun Demo SIMRS ---');

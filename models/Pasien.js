@@ -190,7 +190,11 @@ Pasien.associate = (models) => {
     foreignKey: 'desa_id',
     as: 'desa',
   });
-  Pasien.hasMany(models.PendaftaranRawatJalan, {
+  Pasien.hasMany(models.Pendaftaran, {
+    foreignKey: 'pasien_id',
+    as: 'pendaftaran',
+  });
+  Pasien.hasMany(models.Pendaftaran, {
     foreignKey: 'pasien_id',
     as: 'kunjungan_rawat_jalan',
   });
