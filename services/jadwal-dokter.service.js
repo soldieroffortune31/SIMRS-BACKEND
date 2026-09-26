@@ -21,12 +21,12 @@ class JadwalDokterService {
         {
           model: User,
           as: 'dokter',
-          attributes: ['id', 'username', 'nama_lengkap', 'nip_nik'],
+          attributes: ['user_id', 'username', 'nama_lengkap', 'nip_nik'],
         },
         {
           model: Ruangan,
           as: 'ruangan',
-          attributes: ['id', 'kode_ruangan', 'nama_ruangan', 'instalasi_id'],
+          attributes: ['ruangan_id', 'kode_ruangan', 'nama_ruangan', 'instalasi_id'],
         },
       ],
       order: [
@@ -42,8 +42,8 @@ class JadwalDokterService {
   async getJadwalDokterById(id) {
     const jadwal = await JadwalDokter.findByPk(id, {
       include: [
-        { model: User, as: 'dokter', attributes: ['id', 'username', 'nama_lengkap', 'nip_nik'] },
-        { model: Ruangan, as: 'ruangan', attributes: ['id', 'kode_ruangan', 'nama_ruangan'] },
+        { model: User, as: 'dokter', attributes: ['user_id', 'username', 'nama_lengkap', 'nip_nik'] },
+        { model: Ruangan, as: 'ruangan', attributes: ['ruangan_id', 'kode_ruangan', 'nama_ruangan'] },
       ],
     });
 
@@ -109,7 +109,7 @@ class JadwalDokterService {
   async deleteJadwalDokter(id) {
     const jadwal = await this.getJadwalDokterById(id);
     await jadwal.destroy();
-    return { id, message: 'Jadwal dokter berhasil dihapus.' };
+    return { jadwaldokter_id: id, jadwal_dokter_id: id, id, message: 'Jadwal dokter berhasil dihapus.' };
   }
 }
 

@@ -21,8 +21,10 @@ class PendaftaranService {
     const t = await sequelize.transaction();
 
     try {
+      const jadwalId = data.jadwaldokter_id || data.jadwal_dokter_id;
+
       // 1. Validasi Keberadaan & Keaktifan Jadwal Dokter
-      const jadwal = await JadwalDokter.findByPk(data.jadwal_dokter_id, {
+      const jadwal = await JadwalDokter.findByPk(jadwalId, {
         include: [
           { model: Ruangan, as: 'ruangan' },
           { model: User, as: 'dokter' },
@@ -43,7 +45,7 @@ class PendaftaranService {
       // 3. Pengecekan Kuota Pasien pada Jadwal Tersebut
       const totalTerdaftar = await Pendaftaran.count({
         where: {
-          jadwal_dokter_id: jadwal.id,
+          jadwaldokter_id: jadwal.jadwaldokter_id,
           tanggal_kunjungan: tanggalKunjungan,
           jenis_pelayanan: 'RAWAT_JALAN',
           status_antrean: { [Op.ne]: 'BATAL' },
@@ -77,7 +79,7 @@ class PendaftaranService {
           },
           t
         );
-        pasienId = pasienRecord.id;
+        pasienId = pasienRecord.pasien_id;
       } else {
         // Pasien Lama
         pasienRecord = await Pasien.findByPk(pasienId, { transaction: t });
@@ -141,7 +143,7 @@ class PendaftaranService {
           pasien_id: pasienId,
           tipe_pasien: data.tipe_pasien,
           jenis_pelayanan: 'RAWAT_JALAN',
-          jadwal_dokter_id: jadwal.id,
+          jadwaldokter_id: jadwal.jadwaldokter_id,
           dokter_id: jadwal.dokter_id,
           ruangan_id: jadwal.ruangan_id,
           tanggal_kunjungan: tanggalKunjungan,
@@ -159,7 +161,7 @@ class PendaftaranService {
       await t.commit();
 
       // Return data pendaftaran lengkap
-      return this.getPendaftaranById(pendaftaran.id);
+      return this.getPendaftaranById(pendaftaran.pendaftaran_id);
     } catch (error) {
       await t.rollback();
       throw error;
@@ -203,22 +205,22 @@ class PendaftaranService {
       {
         model: Pasien,
         as: 'pasien',
-        attributes: ['id', 'no_rm', 'nama_lengkap', 'nik', 'jenis_kelamin', 'tanggal_lahir', 'no_telepon'],
+        attributes: ['pasien_id', 'no_rm', 'nama_lengkap', 'nik', 'jenis_kelamin', 'tanggal_lahir', 'no_telepon'],
       },
       {
         model: User,
         as: 'dokter',
-        attributes: ['id', 'nama_lengkap', 'nip_nik'],
+        attributes: ['user_id', 'nama_lengkap', 'nip_nik'],
       },
       {
         model: Ruangan,
         as: 'ruangan',
-        attributes: ['id', 'kode_ruangan', 'nama_ruangan'],
+        attributes: ['ruangan_id', 'kode_ruangan', 'nama_ruangan'],
       },
       {
         model: JadwalDokter,
         as: 'jadwal_dokter',
-        attributes: ['id', 'hari', 'jam_mulai', 'jam_selesai'],
+        attributes: ['jadwaldokter_id', 'hari', 'jam_mulai', 'jam_selesai'],
       },
     ];
 
@@ -260,10 +262,10 @@ class PendaftaranService {
             { model: DesaKelurahan, as: 'desa' },
           ],
         },
-        { model: User, as: 'dokter', attributes: ['id', 'nama_lengkap', 'nip_nik'] },
-        { model: Ruangan, as: 'ruangan', attributes: ['id', 'kode_ruangan', 'nama_ruangan'] },
+        { model: User, as: 'dokter', attributes: ['user_id', 'nama_lengkap', 'nip_nik'] },
+        { model: Ruangan, as: 'ruangan', attributes: ['ruangan_id', 'kode_ruangan', 'nama_ruangan'] },
         { model: JadwalDokter, as: 'jadwal_dokter' },
-        { model: User, as: 'petugas_admisi', attributes: ['id', 'nama_lengkap', 'username'] },
+        { model: User, as: 'petugas_admisi', attributes: ['user_id', 'nama_lengkap', 'username'] },
         { model: Pendaftaran, as: 'pendaftaran_asal' },
       ],
     });

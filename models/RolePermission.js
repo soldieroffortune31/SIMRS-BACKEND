@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const RolePermission = sequelize.define('RolePermission', {
-  id: {
+  rolepermission_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -12,7 +12,7 @@ const RolePermission = sequelize.define('RolePermission', {
     allowNull: false,
     references: {
       model: 'roles',
-      key: 'id',
+      key: 'role_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -22,7 +22,7 @@ const RolePermission = sequelize.define('RolePermission', {
     allowNull: false,
     references: {
       model: 'permissions',
-      key: 'id',
+      key: 'permission_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -37,7 +37,6 @@ const RolePermission = sequelize.define('RolePermission', {
     },
   ],
 });
-
 
 RolePermission.associate = (models) => {
   RolePermission.belongsTo(models.Role, { foreignKey: 'role_id', as: 'role' });

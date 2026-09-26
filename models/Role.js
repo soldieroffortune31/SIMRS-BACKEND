@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Role = sequelize.define('Role', {
-  id: {
+  role_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -24,7 +24,6 @@ const Role = sequelize.define('Role', {
   tableName: 'roles',
   paranoid: true,
 });
-
 
 Role.associate = (models) => {
   Role.hasMany(models.UserRuanganRole, {

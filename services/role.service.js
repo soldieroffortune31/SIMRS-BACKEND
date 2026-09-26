@@ -15,7 +15,7 @@ class RoleService {
           through: { attributes: [] },
         },
       ],
-      order: [['id', 'ASC']],
+      order: [['role_id', 'ASC']],
     });
   }
 
@@ -72,7 +72,7 @@ class RoleService {
   async deleteRole(id) {
     const role = await this.getRoleById(id);
     await role.destroy();
-    return { id, message: 'Role berhasil dihapus.' };
+    return { role_id: id, id, message: 'Role berhasil dihapus.' };
   }
 
   async assignPermissionsToRole(roleId, permissionIds) {

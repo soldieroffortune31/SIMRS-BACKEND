@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Instalasi = sequelize.define('Instalasi', {
-  id: {
+  instalasi_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -24,7 +24,6 @@ const Instalasi = sequelize.define('Instalasi', {
   tableName: 'instalasi',
   paranoid: true,
 });
-
 
 Instalasi.associate = (models) => {
   Instalasi.hasMany(models.Ruangan, {

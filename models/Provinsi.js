@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Provinsi = sequelize.define('Provinsi', {
-  id: {
+  provinsi_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -24,7 +24,6 @@ const Provinsi = sequelize.define('Provinsi', {
   tableName: 'provinsi',
   paranoid: true,
 });
-
 
 Provinsi.associate = (models) => {
   Provinsi.hasMany(models.KabupatenKota, {

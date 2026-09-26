@@ -6,7 +6,7 @@ class PendaftaranController {
   // ==========================================
   async daftarRawatJalan(req, res, next) {
     try {
-      const createdByUserId = req.user ? req.user.id : null;
+      const createdByUserId = req.user ? (req.user.user_id || req.user.id || req.user.userId) : null;
       const data = await pendaftaranService.daftarRawatJalan(req.body, createdByUserId);
       return res.status(201).json({
         success: true,

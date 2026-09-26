@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Permission = sequelize.define('Permission', {
-  id: {
+  permission_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -12,7 +12,7 @@ const Permission = sequelize.define('Permission', {
     allowNull: true,
     references: {
       model: 'menus',
-      key: 'id',
+      key: 'menu_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -33,7 +33,6 @@ const Permission = sequelize.define('Permission', {
 }, {
   tableName: 'permissions',
 });
-
 
 Permission.associate = (models) => {
   Permission.belongsTo(models.Menu, {

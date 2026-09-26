@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const MenuInstalasi = sequelize.define('MenuInstalasi', {
-  id: {
+  menuinstalasi_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -12,7 +12,7 @@ const MenuInstalasi = sequelize.define('MenuInstalasi', {
     allowNull: false,
     references: {
       model: 'menus',
-      key: 'id',
+      key: 'menu_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -22,7 +22,7 @@ const MenuInstalasi = sequelize.define('MenuInstalasi', {
     allowNull: false,
     references: {
       model: 'instalasi',
-      key: 'id',
+      key: 'instalasi_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -37,7 +37,6 @@ const MenuInstalasi = sequelize.define('MenuInstalasi', {
     },
   ],
 });
-
 
 MenuInstalasi.associate = (models) => {
   MenuInstalasi.belongsTo(models.Menu, { foreignKey: 'menu_id', as: 'menu' });

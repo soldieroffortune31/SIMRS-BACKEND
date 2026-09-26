@@ -82,7 +82,7 @@ class WilayahService {
   async deleteProvinsi(id) {
     const provinsi = await this.getProvinsiById(id);
     await provinsi.destroy();
-    return { id, message: 'Provinsi berhasil dihapus.' };
+    return { provinsi_id: id, id, message: 'Provinsi berhasil dihapus.' };
   }
 
   // ==========================================
@@ -117,7 +117,7 @@ class WilayahService {
         {
           model: Provinsi,
           as: 'provinsi',
-          attributes: ['id', 'kode_provinsi', 'nama_provinsi'],
+          attributes: ['provinsi_id', 'kode_provinsi', 'nama_provinsi'],
         },
       ],
       order: [['kode_kabupaten', 'ASC']],
@@ -181,7 +181,7 @@ class WilayahService {
   async deleteKabupaten(id) {
     const kab = await this.getKabupatenById(id);
     await kab.destroy();
-    return { id, message: 'Kabupaten/Kota berhasil dihapus.' };
+    return { kabupaten_id: id, id, message: 'Kabupaten/Kota berhasil dihapus.' };
   }
 
   // ==========================================
@@ -212,7 +212,7 @@ class WilayahService {
         {
           model: KabupatenKota,
           as: 'kabupaten',
-          attributes: ['id', 'kode_kabupaten', 'nama_kabupaten', 'tipe'],
+          attributes: ['kabupaten_id', 'kode_kabupaten', 'nama_kabupaten', 'tipe'],
         },
       ],
       order: [['kode_kecamatan', 'ASC']],
@@ -235,7 +235,6 @@ class WilayahService {
         {
           model: KabupatenKota,
           as: 'kabupaten',
-          include: [{ model: Provinsi, as: 'provinsi' }],
         },
         {
           model: DesaKelurahan,
@@ -277,14 +276,14 @@ class WilayahService {
   async deleteKecamatan(id) {
     const kec = await this.getKecamatanById(id);
     await kec.destroy();
-    return { id, message: 'Kecamatan berhasil dihapus.' };
+    return { kecamatan_id: id, id, message: 'Kecamatan berhasil dihapus.' };
   }
 
   // ==========================================
   // 4. DESA / KELURAHAN
   // ==========================================
   async getAllDesa(query = {}) {
-    const { kecamatan_id, tipe, kode_pos, search, is_active, page, limit } = query;
+    const { kecamatan_id, tipe, search, is_active, page, limit } = query;
     const where = {};
 
     if (kecamatan_id) {
@@ -295,10 +294,6 @@ class WilayahService {
       where.tipe = tipe.toUpperCase();
     }
 
-    if (kode_pos) {
-      where.kode_pos = kode_pos;
-    }
-
     if (is_active !== undefined) {
       where.is_active = is_active === 'true' || is_active === true;
     }
@@ -307,7 +302,6 @@ class WilayahService {
       where[Op.or] = [
         { kode_desa: { [Op.iLike]: `%${search}%` } },
         { nama_desa: { [Op.iLike]: `%${search}%` } },
-        { kode_pos: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
@@ -317,12 +311,12 @@ class WilayahService {
         {
           model: Kecamatan,
           as: 'kecamatan',
-          attributes: ['id', 'kode_kecamatan', 'nama_kecamatan'],
+          attributes: ['kecamatan_id', 'kode_kecamatan', 'nama_kecamatan'],
           include: [
             {
               model: KabupatenKota,
               as: 'kabupaten',
-              attributes: ['id', 'kode_kabupaten', 'nama_kabupaten', 'tipe'],
+              attributes: ['kabupaten_id', 'kode_kabupaten', 'nama_kabupaten', 'tipe'],
             },
           ],
         },
@@ -351,13 +345,8 @@ class WilayahService {
             {
               model: KabupatenKota,
               as: 'kabupaten',
-              include: [{ model: Provinsi, as: 'provinsi' }],
             },
           ],
-        },
-        {
-          model: KodePos,
-          as: 'list_kode_pos',
         },
       ],
     });
@@ -395,19 +384,17 @@ class WilayahService {
   async deleteDesa(id) {
     const desa = await this.getDesaById(id);
     await desa.destroy();
-    return { id, message: 'Desa/Kelurahan berhasil dihapus.' };
+    return { desa_id: id, id, message: 'Desa/Kelurahan berhasil dihapus.' };
   }
 
   // ==========================================
-  // 5. KODE POS
+  // 5. KODE POS (SEARCH & LOOKUP)
   // ==========================================
   async getAllKodePos(query = {}) {
     const { kode_pos, desa_id, kecamatan_id, kabupaten_id, provinsi_id, search, page, limit } = query;
     const where = {};
 
-    if (kode_pos) {
-      where.kode_pos = kode_pos;
-    }
+    if (kode_pos) where.kode_pos = kode_pos;
     if (desa_id) where.desa_id = parseInt(desa_id, 10);
     if (kecamatan_id) where.kecamatan_id = parseInt(kecamatan_id, 10);
     if (kabupaten_id) where.kabupaten_id = parseInt(kabupaten_id, 10);
@@ -423,10 +410,10 @@ class WilayahService {
     const options = {
       where,
       include: [
-        { model: Provinsi, as: 'provinsi', attributes: ['id', 'kode_provinsi', 'nama_provinsi'] },
-        { model: KabupatenKota, as: 'kabupaten', attributes: ['id', 'kode_kabupaten', 'nama_kabupaten', 'tipe'] },
-        { model: Kecamatan, as: 'kecamatan', attributes: ['id', 'kode_kecamatan', 'nama_kecamatan'] },
-        { model: DesaKelurahan, as: 'desa', attributes: ['id', 'kode_desa', 'nama_desa', 'tipe', 'kode_pos'] },
+        { model: Provinsi, as: 'provinsi', attributes: ['provinsi_id', 'kode_provinsi', 'nama_provinsi'] },
+        { model: KabupatenKota, as: 'kabupaten', attributes: ['kabupaten_id', 'kode_kabupaten', 'nama_kabupaten', 'tipe'] },
+        { model: Kecamatan, as: 'kecamatan', attributes: ['kecamatan_id', 'kode_kecamatan', 'nama_kecamatan'] },
+        { model: DesaKelurahan, as: 'desa', attributes: ['desa_id', 'kode_desa', 'nama_desa', 'tipe', 'kode_pos'] },
       ],
       order: [['kode_pos', 'ASC']],
     };
@@ -443,14 +430,22 @@ class WilayahService {
   }
 
   async getKodePosByCode(kodePos) {
+    return this.searchKodePos(kodePos);
+  }
+
+  async searchKodePos(kode) {
     const results = await KodePos.findAll({
-      where: { kode_pos: kodePos },
+      where: {
+        kode_pos: { [Op.like]: `${kode}%` },
+        is_active: true,
+      },
       include: [
         { model: Provinsi, as: 'provinsi' },
         { model: KabupatenKota, as: 'kabupaten' },
         { model: Kecamatan, as: 'kecamatan' },
         { model: DesaKelurahan, as: 'desa' },
       ],
+      limit: 20,
     });
     return results;
   }
@@ -484,7 +479,7 @@ class WilayahService {
   async deleteKodePos(id) {
     const kodepos = await this.getKodePosById(id);
     await kodepos.destroy();
-    return { id, message: 'Kode Pos berhasil dihapus.' };
+    return { kodepos_id: id, kode_pos_id: id, id, message: 'Kode Pos berhasil dihapus.' };
   }
 }
 

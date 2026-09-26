@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const RoleMenu = sequelize.define('RoleMenu', {
-  id: {
+  rolemenu_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -12,7 +12,7 @@ const RoleMenu = sequelize.define('RoleMenu', {
     allowNull: false,
     references: {
       model: 'roles',
-      key: 'id',
+      key: 'role_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -22,7 +22,7 @@ const RoleMenu = sequelize.define('RoleMenu', {
     allowNull: false,
     references: {
       model: 'menus',
-      key: 'id',
+      key: 'menu_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -37,7 +37,6 @@ const RoleMenu = sequelize.define('RoleMenu', {
     },
   ],
 });
-
 
 RoleMenu.associate = (models) => {
   RoleMenu.belongsTo(models.Role, { foreignKey: 'role_id', as: 'role' });

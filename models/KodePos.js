@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const KodePos = sequelize.define('KodePos', {
-  id: {
+  kodepos_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -16,7 +16,7 @@ const KodePos = sequelize.define('KodePos', {
     allowNull: true,
     references: {
       model: 'provinsi',
-      key: 'id',
+      key: 'provinsi_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -26,7 +26,7 @@ const KodePos = sequelize.define('KodePos', {
     allowNull: true,
     references: {
       model: 'kabupaten_kota',
-      key: 'id',
+      key: 'kabupaten_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -36,7 +36,7 @@ const KodePos = sequelize.define('KodePos', {
     allowNull: true,
     references: {
       model: 'kecamatan',
-      key: 'id',
+      key: 'kecamatan_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -46,7 +46,7 @@ const KodePos = sequelize.define('KodePos', {
     allowNull: true,
     references: {
       model: 'desa_kelurahan',
-      key: 'id',
+      key: 'desa_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -68,7 +68,6 @@ const KodePos = sequelize.define('KodePos', {
     },
   ],
 });
-
 
 KodePos.associate = (models) => {
   KodePos.belongsTo(models.Provinsi, { foreignKey: 'provinsi_id', as: 'provinsi' });

@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const JadwalDokter = sequelize.define('JadwalDokter', {
-  id: {
+  jadwaldokter_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -12,7 +12,7 @@ const JadwalDokter = sequelize.define('JadwalDokter', {
     allowNull: false,
     references: {
       model: 'users',
-      key: 'id',
+      key: 'user_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
@@ -22,7 +22,7 @@ const JadwalDokter = sequelize.define('JadwalDokter', {
     allowNull: false,
     references: {
       model: 'ruangan',
-      key: 'id',
+      key: 'ruangan_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
@@ -32,11 +32,11 @@ const JadwalDokter = sequelize.define('JadwalDokter', {
     allowNull: false,
   },
   jam_mulai: {
-    type: DataTypes.STRING(8), // format HH:mm misal '08:00'
+    type: DataTypes.STRING(8),
     allowNull: false,
   },
   jam_selesai: {
-    type: DataTypes.STRING(8), // format HH:mm misal '12:00'
+    type: DataTypes.STRING(8),
     allowNull: false,
   },
   kuota_pasien: {
@@ -67,7 +67,7 @@ JadwalDokter.associate = (models) => {
     as: 'ruangan',
   });
   JadwalDokter.hasMany(models.Pendaftaran, {
-    foreignKey: 'jadwal_dokter_id',
+    foreignKey: 'jadwaldokter_id',
     as: 'pendaftaran_list',
   });
 };

@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Pasien = sequelize.define('Pasien', {
-  id: {
+  pasien_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -102,7 +102,7 @@ const Pasien = sequelize.define('Pasien', {
     allowNull: true,
     references: {
       model: 'provinsi',
-      key: 'id',
+      key: 'provinsi_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -112,7 +112,7 @@ const Pasien = sequelize.define('Pasien', {
     allowNull: true,
     references: {
       model: 'kabupaten_kota',
-      key: 'id',
+      key: 'kabupaten_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -122,7 +122,7 @@ const Pasien = sequelize.define('Pasien', {
     allowNull: true,
     references: {
       model: 'kecamatan',
-      key: 'id',
+      key: 'kecamatan_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -132,7 +132,7 @@ const Pasien = sequelize.define('Pasien', {
     allowNull: true,
     references: {
       model: 'desa_kelurahan',
-      key: 'id',
+      key: 'desa_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -141,7 +141,6 @@ const Pasien = sequelize.define('Pasien', {
     type: DataTypes.STRING(10),
     allowNull: true,
   },
-  // Identitas Penanggung Jawab / Keluarga Terdekat
   nama_penanggung_jawab: {
     type: DataTypes.STRING(150),
     allowNull: true,
@@ -154,7 +153,6 @@ const Pasien = sequelize.define('Pasien', {
     type: DataTypes.STRING(25),
     allowNull: true,
   },
-  // Penjamin Default (Umum / Asuransi)
   jenis_penjamin_default: {
     type: DataTypes.ENUM('UMUM', 'BPJS', 'ASURANSI_SWASTA', 'PERUSAHAAN'),
     defaultValue: 'UMUM',

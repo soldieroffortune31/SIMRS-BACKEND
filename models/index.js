@@ -2,6 +2,16 @@ const fs = require('fs');
 const path = require('path');
 const sequelize = require('../config/database');
 
+/**
+ * STANDAR KONVENSI MODEL & TABEL SIMRS:
+ * Seluruh model dan tabel menggunakan penamaan Primary Key seragam berbasis:
+ *   <namatabel>_id tanpa pemisah underscore antar kata untuk nama multi-kata
+ *   (contoh: jadwaldokter_id, rolepermission_id, menuinstalasi_id, kodepos_id, instalasi_id, user_id)
+ * Hindari penamaan primary key generik 'id'.
+ * Untuk membuat model baru sesuai standar, gunakan script generator:
+ *   npm run create-model <ModelName> [tableName]
+ */
+
 const db = {};
 
 // 1. Muat seluruh file model secara otomatis dari direktori ini

@@ -8,6 +8,7 @@
     "setup": "node scripts/auto-bootstrap.js",
     "init-db": "node scripts/init-db.js",
     "seed": "node seeders/initial_seeder.js",
+    "create-model": "node scripts/create-model.js",
     "test": "node tests/api_verification.js"
   },
   "author": "Aliefsufi Uzan Kafil Ardi",

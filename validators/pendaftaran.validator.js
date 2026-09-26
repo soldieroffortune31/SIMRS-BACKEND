@@ -40,13 +40,14 @@ const pendaftaranRawatJalanSchema = Joi.object({
     otherwise: Joi.optional().allow(null),
   }),
   // Kebutuhan Kunjungan Poliklinik & Jadwal Dokter
-  jadwal_dokter_id: Joi.number().integer().positive().required(),
+  jadwaldokter_id: Joi.number().integer().positive().optional(),
+  jadwal_dokter_id: Joi.number().integer().positive().optional(),
   tanggal_kunjungan: Joi.date().iso().default(() => new Date().toISOString().split('T')[0]),
   jenis_penjamin: Joi.string().valid('UMUM', 'BPJS', 'ASURANSI_SWASTA', 'PERUSAHAAN').required(),
   no_kartu_penjamin: Joi.string().trim().allow('', null).optional(),
   keluhan_utama: Joi.string().trim().allow('', null).optional(),
   catatan: Joi.string().trim().allow('', null).optional(),
-});
+}).or('jadwaldokter_id', 'jadwal_dokter_id');
 
 const updateStatusPendaftaranSchema = Joi.object({
   status_antrean: Joi.string().valid('MENUNGGU', 'DIPANGGIL', 'SEDANG_DILAYANI', 'SELESAI', 'BATAL').required(),

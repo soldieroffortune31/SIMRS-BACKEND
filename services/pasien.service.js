@@ -1,48 +1,47 @@
 const { Op } = require('sequelize');
 const {
-  sequelize,
   Pasien,
-  Pendaftaran,
-  User,
-  Ruangan,
   Provinsi,
   KabupatenKota,
   Kecamatan,
   DesaKelurahan,
+  Pendaftaran,
+  Ruangan,
+  User,
 } = require('../models');
 
 class PasienService {
   /**
-   * Menghasilkan Nomor Rekam Medis (No RM) berurutan
+   * Helper untuk membuat No RM otomatis berurutan (RM-000001)
    */
   async generateNoRM(transaction = null) {
-    const lastPatient = await Pasien.findOne({
-      order: [['created_at', 'DESC']],
+    const lastPasien = await Pasien.findOne({
+      order: [['pasien_id', 'DESC']],
+      attributes: ['pasien_id', 'no_rm'],
       paranoid: false,
       transaction,
     });
 
     let nextNumber = 1;
-    if (lastPatient && lastPatient.no_rm) {
-      const numeric = parseInt(lastPatient.no_rm.replace(/\D/g, ''), 10);
-      if (!isNaN(numeric)) {
-        nextNumber = numeric + 1;
+    if (lastPasien && lastPasien.no_rm) {
+      const match = lastPasien.no_rm.match(/\d+/);
+      if (match) {
+        nextNumber = parseInt(match[0], 10) + 1;
       }
     }
+
     return `RM-${String(nextNumber).padStart(6, '0')}`;
   }
 
   /**
-   * Mengambil daftar seluruh pasien dengan filter & paginasi
+   * Mengambil daftar master pasien dengan pencarian fleksibel & pagination
    */
   async getAllPasien(query = {}) {
-    const { search, jenis_kelamin, is_active, page = 1, limit = 20 } = query;
+    const { search, jenis_kelamin, jenis_penjamin, is_active, page, limit } = query;
     const where = {};
 
-    if (jenis_kelamin) {
-      where.jenis_kelamin = jenis_kelamin;
-    }
-
+    if (jenis_kelamin) where.jenis_kelamin = jenis_kelamin.toUpperCase();
+    if (jenis_penjamin) where.jenis_penjamin_default = jenis_penjamin.toUpperCase();
     if (is_active !== undefined) {
       where.is_active = is_active === 'true' || is_active === true;
     }
@@ -56,25 +55,30 @@ class PasienService {
       ];
     }
 
-    const take = parseInt(limit, 10);
-    const skip = (parseInt(page, 10) - 1) * take;
-
-    return Pasien.findAndCountAll({
+    const options = {
       where,
       include: [
-        { model: Provinsi, as: 'provinsi', attributes: ['id', 'nama_provinsi'] },
-        { model: KabupatenKota, as: 'kabupaten', attributes: ['id', 'nama_kabupaten'] },
-        { model: Kecamatan, as: 'kecamatan', attributes: ['id', 'nama_kecamatan'] },
-        { model: DesaKelurahan, as: 'desa', attributes: ['id', 'nama_desa', 'kode_pos'] },
+        { model: Provinsi, as: 'provinsi', attributes: ['provinsi_id', 'nama_provinsi'] },
+        { model: KabupatenKota, as: 'kabupaten', attributes: ['kabupaten_id', 'nama_kabupaten'] },
+        { model: Kecamatan, as: 'kecamatan', attributes: ['kecamatan_id', 'nama_kecamatan'] },
+        { model: DesaKelurahan, as: 'desa', attributes: ['desa_id', 'nama_desa', 'kode_pos'] },
       ],
-      order: [['created_at', 'DESC']],
-      limit: take,
-      offset: skip,
-    });
+      order: [['pasien_id', 'DESC']],
+    };
+
+    if (limit) {
+      const take = parseInt(limit, 10);
+      const skip = page ? (parseInt(page, 10) - 1) * take : 0;
+      options.limit = take;
+      options.offset = skip;
+      return Pasien.findAndCountAll(options);
+    }
+
+    return Pasien.findAll(options);
   }
 
   /**
-   * Detail pasien berdasarkan ID
+   * Detail data pasien berdasarkan ID beserta riwayat kunjungan pendaftaran
    */
   async getPasienById(id) {
     const pasien = await Pasien.findByPk(id, {
@@ -85,27 +89,28 @@ class PasienService {
         { model: DesaKelurahan, as: 'desa' },
         {
           model: Pendaftaran,
-          as: 'kunjungan_rawat_jalan',
+          as: 'pendaftaran',
           limit: 10,
           order: [['tanggal_kunjungan', 'DESC']],
           include: [
-            { model: Ruangan, as: 'ruangan', attributes: ['id', 'nama_ruangan'] },
-            { model: User, as: 'dokter', attributes: ['id', 'nama_lengkap'] },
+            { model: Ruangan, as: 'ruangan', attributes: ['ruangan_id', 'nama_ruangan'] },
+            { model: User, as: 'dokter', attributes: ['user_id', 'nama_lengkap'] },
           ],
         },
       ],
     });
 
     if (!pasien) {
-      const error = new Error('Data pasien tidak ditemukan.');
+      const error = new Error('Data Pasien tidak ditemukan.');
       error.statusCode = 404;
       throw error;
     }
+
     return pasien;
   }
 
   /**
-   * Cari pasien berdasarkan No RM
+   * Cari Pasien Berdasarkan No RM
    */
   async getPasienByNoRM(no_rm) {
     const pasien = await Pasien.findOne({
@@ -117,19 +122,19 @@ class PasienService {
         { model: DesaKelurahan, as: 'desa' },
         {
           model: Pendaftaran,
-          as: 'kunjungan_rawat_jalan',
+          as: 'pendaftaran',
           limit: 10,
           order: [['tanggal_kunjungan', 'DESC']],
           include: [
-            { model: Ruangan, as: 'ruangan', attributes: ['id', 'nama_ruangan'] },
-            { model: User, as: 'dokter', attributes: ['id', 'nama_lengkap'] },
+            { model: Ruangan, as: 'ruangan', attributes: ['ruangan_id', 'nama_ruangan'] },
+            { model: User, as: 'dokter', attributes: ['user_id', 'nama_lengkap'] },
           ],
         },
       ],
     });
 
     if (!pasien) {
-      const error = new Error(`Data pasien dengan No. RM '${no_rm}' tidak ditemukan.`);
+      const error = new Error(`Pasien dengan No RM '${no_rm}' tidak ditemukan.`);
       error.statusCode = 404;
       throw error;
     }
@@ -137,7 +142,7 @@ class PasienService {
   }
 
   /**
-   * Cari pasien berdasarkan NIK
+   * Cari Pasien Berdasarkan NIK
    */
   async getPasienByNIK(nik) {
     const pasien = await Pasien.findOne({
@@ -149,71 +154,69 @@ class PasienService {
         { model: DesaKelurahan, as: 'desa' },
         {
           model: Pendaftaran,
-          as: 'kunjungan_rawat_jalan',
+          as: 'pendaftaran',
           limit: 10,
           order: [['tanggal_kunjungan', 'DESC']],
           include: [
-            { model: Ruangan, as: 'ruangan', attributes: ['id', 'nama_ruangan'] },
-            { model: User, as: 'dokter', attributes: ['id', 'nama_lengkap'] },
+            { model: Ruangan, as: 'ruangan', attributes: ['ruangan_id', 'nama_ruangan'] },
+            { model: User, as: 'dokter', attributes: ['user_id', 'nama_lengkap'] },
           ],
         },
       ],
     });
 
     if (!pasien) {
-      const error = new Error(`Data pasien dengan NIK '${nik}' tidak ditemukan.`);
+      const error = new Error(`Pasien dengan NIK '${nik}' tidak ditemukan.`);
       error.statusCode = 404;
       throw error;
     }
     return pasien;
   }
 
+  async getPasienByNik(nik) {
+    return this.getPasienByNIK(nik);
+  }
+
   /**
-   * Registrasi / Buat Pasien Baru
+   * Pendaftaran master pasien baru terpadu
    */
   async createPasien(data, transaction = null) {
-    const sanitized = { ...data };
-    for (const key of Object.keys(sanitized)) {
-      if (typeof sanitized[key] === 'string' && sanitized[key].trim() === '') {
-        sanitized[key] = null;
-      }
-    }
-    data = sanitized;
-
-    if (data.nik) {
-      const existing = await Pasien.findOne({
+    // Validasi NIK unik jika disertakan
+    if (data.nik && data.nik.trim() !== '') {
+      const existingNik = await Pasien.findOne({
         where: { nik: data.nik },
         paranoid: false,
         transaction,
       });
-      if (existing) {
-        const error = new Error(`Pasien dengan NIK ${data.nik} sudah terdaftar dengan No. RM: ${existing.no_rm}.`);
+      if (existingNik) {
+        const error = new Error(`Pasien dengan NIK '${data.nik}' sudah terdaftar dalam sistem.`);
         error.statusCode = 409;
         throw error;
       }
     }
 
-    const no_rm = await this.generateNoRM(transaction);
-    const payload = {
-      ...data,
-      no_rm,
-    };
+    // Generate No RM otomatis jika tidak disediakan secara manual
+    if (!data.no_rm) {
+      data.no_rm = await this.generateNoRM(transaction);
+    }
 
-    return Pasien.create(payload, { transaction });
+    return Pasien.create(data, { transaction });
   }
 
   /**
-   * Perbarui Data Pasien
+   * Pembaruan data demografi pasien
    */
   async updatePasien(id, data) {
     const pasien = await this.getPasienById(id);
 
-    if (data.nik && data.nik !== pasien.nik) {
-      const existing = await Pasien.findOne({
-        where: { nik: data.nik, id: { [Op.ne]: id } },
+    // Cek duplikasi NIK selain dirinya sendiri
+    if (data.nik && data.nik.trim() !== '' && data.nik !== pasien.nik) {
+      const existingNik = await Pasien.findOne({
+        where: { nik: data.nik, pasien_id: { [Op.ne]: id } },
+        paranoid: false,
       });
-      if (existing) {
-        const error = new Error(`NIK ${data.nik} sudah terdaftar pada pasien lain.`);
+      if (existingNik) {
+        const error = new Error(`Pasien dengan NIK '${data.nik}' sudah terdaftar dalam sistem.`);
         error.statusCode = 409;
         throw error;
       }
@@ -223,12 +226,12 @@ class PasienService {
   }
 
   /**
-   * Hapus / Nonaktifkan Data Pasien (Soft Delete)
+   * Soft delete pasien
    */
   async deletePasien(id) {
     const pasien = await this.getPasienById(id);
     await pasien.destroy();
-    return { id, message: 'Data pasien berhasil dihapus.' };
+    return { pasien_id: id, id, message: 'Data pasien berhasil dihapus.' };
   }
 }
 

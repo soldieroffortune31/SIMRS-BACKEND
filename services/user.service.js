@@ -40,7 +40,7 @@ class UserService {
 
       if (Array.isArray(assignments) && assignments.length > 0) {
         const assignmentRows = assignments.map(a => ({
-          user_id: user.id,
+          user_id: user.user_id,
           ruangan_id: a.ruangan_id,
           role_id: a.role_id,
           is_default: a.is_default || false,
@@ -49,7 +49,7 @@ class UserService {
       }
 
       await transaction.commit();
-      return this.getUserById(user.id);
+      return this.getUserById(user.user_id);
     } catch (error) {
       await transaction.rollback();
       throw error;
@@ -110,17 +110,17 @@ class UserService {
             {
               model: Role,
               as: 'role',
-              attributes: ['id', 'kode_role', 'nama_role'],
+              attributes: ['role_id', 'kode_role', 'nama_role'],
             },
             {
               model: Ruangan,
               as: 'ruangan',
-              attributes: ['id', 'kode_ruangan', 'nama_ruangan'],
+              attributes: ['ruangan_id', 'kode_ruangan', 'nama_ruangan'],
               include: [
                 {
                   model: Instalasi,
                   as: 'instalasi',
-                  attributes: ['id', 'kode_instalasi', 'nama_instalasi'],
+                  attributes: ['instalasi_id', 'kode_instalasi', 'nama_instalasi'],
                 },
               ],
             },
@@ -142,17 +142,17 @@ class UserService {
             {
               model: Role,
               as: 'role',
-              attributes: ['id', 'kode_role', 'nama_role'],
+              attributes: ['role_id', 'kode_role', 'nama_role'],
             },
             {
               model: Ruangan,
               as: 'ruangan',
-              attributes: ['id', 'kode_ruangan', 'nama_ruangan'],
+              attributes: ['ruangan_id', 'kode_ruangan', 'nama_ruangan'],
               include: [
                 {
                   model: Instalasi,
                   as: 'instalasi',
-                  attributes: ['id', 'kode_instalasi', 'nama_instalasi'],
+                  attributes: ['instalasi_id', 'kode_instalasi', 'nama_instalasi'],
                 },
               ],
             },

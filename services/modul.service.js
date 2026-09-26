@@ -79,7 +79,7 @@ class ModulService {
         {
           model: Instalasi,
           as: 'instalasi_list',
-          where: { id: instalasiId },
+          where: { instalasi_id: instalasiId },
           through: { attributes: ['is_active'], where: { is_active: true } },
         },
       ],
@@ -124,7 +124,7 @@ class ModulService {
         {
           model: Ruangan,
           as: 'ruangan_list',
-          where: { id: ruanganId },
+          where: { ruangan_id: ruanganId },
           through: { attributes: ['is_active'], where: { is_active: true } },
         },
       ],
@@ -172,11 +172,6 @@ class ModulService {
 
   /**
    * Mengkalkulasi daftar modul yang berhak diakses oleh User pada Ruangan & Instalasi aktif
-   * Hierarki:
-   * 1. Jika User adalah ADMIN -> Berikan SEMUA modul aktif
-   * 2. Jika ada pengaturan eksplisit per Akun di Ruangan (user_ruangan_modul) -> Gunakan modul akun tersebut
-   * 3. Jika tidak ada override akun -> Gunakan modul yang diaktifkan pada Ruangan (modul_ruangan)
-   * 4. Jika ruangan tidak memiliki batasan khusus -> Gunakan modul yang diaktifkan pada Instalasi (modul_instalasi)
    */
   async getUserAccessibleModules(userId, ruanganId, instalasiId, roleCode = null) {
     // 1. Role ADMIN mendapat akses semua modul

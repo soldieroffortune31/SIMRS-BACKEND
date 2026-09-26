@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Kecamatan = sequelize.define('Kecamatan', {
-  id: {
+  kecamatan_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -12,7 +12,7 @@ const Kecamatan = sequelize.define('Kecamatan', {
     allowNull: false,
     references: {
       model: 'kabupaten_kota',
-      key: 'id',
+      key: 'kabupaten_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -34,7 +34,6 @@ const Kecamatan = sequelize.define('Kecamatan', {
   tableName: 'kecamatan',
   paranoid: true,
 });
-
 
 Kecamatan.associate = (models) => {
   Kecamatan.belongsTo(models.KabupatenKota, {

@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const ModulRuangan = sequelize.define('ModulRuangan', {
-  id: {
+  modulruangan_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -12,7 +12,7 @@ const ModulRuangan = sequelize.define('ModulRuangan', {
     allowNull: false,
     references: {
       model: 'modul',
-      key: 'id',
+      key: 'modul_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -22,7 +22,7 @@ const ModulRuangan = sequelize.define('ModulRuangan', {
     allowNull: false,
     references: {
       model: 'ruangan',
-      key: 'id',
+      key: 'ruangan_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -42,7 +42,6 @@ const ModulRuangan = sequelize.define('ModulRuangan', {
     },
   ],
 });
-
 
 ModulRuangan.associate = (models) => {
   ModulRuangan.belongsTo(models.Modul, { foreignKey: 'modul_id', as: 'modul' });

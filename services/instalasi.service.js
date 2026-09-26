@@ -3,7 +3,7 @@ const { Instalasi, Ruangan } = require('../models');
 class InstalasiService {
   async getAllInstalasi(includeRuangan = false) {
     const options = {
-      order: [['id', 'ASC']],
+      order: [['instalasi_id', 'ASC']],
     };
     if (includeRuangan) {
       options.include = [
@@ -65,7 +65,7 @@ class InstalasiService {
   async deleteInstalasi(id) {
     const instalasi = await this.getInstalasiById(id);
     await instalasi.destroy();
-    return { id, message: 'Instalasi berhasil dihapus.' };
+    return { instalasi_id: id, id, message: 'Instalasi berhasil dihapus.' };
   }
 }
 

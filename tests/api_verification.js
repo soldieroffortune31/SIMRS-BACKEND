@@ -230,14 +230,14 @@ async function runTests() {
         'Authorization': `Bearer ${adminToken}`,
       },
       body: JSON.stringify({
-        user_id: selectJson.data.user.id, // dr. Budi
+        user_id: (selectJson.data.user.user_id || selectJson.data.user.id), // dr. Budi
         ruangan_id: 101, // Poli Dalam
         modul_ids: [1], // Hanya Modul Rawat Jalan
       }),
     });
     const assignModJson = await assignModRes.json();
     assert(assignModRes.status === 200, 'Admin berhasil mengatur modul akun di ruangan (status 200)');
-    assert(assignModJson.data.some(m => m.id === 1), 'Modul 1 (Rawat Jalan) aktif untuk user tersebut');
+    assert(assignModJson.data.some(m => (m.modul_id === 1 || m.id === 1)), 'Modul 1 (Rawat Jalan) aktif untuk user tersebut');
 
     // -------------------------------------------------------------
     // TEST 12: Master Wilayah - Mengambil daftar Provinsi
@@ -256,7 +256,7 @@ async function runTests() {
     // TEST 13: Master Wilayah - Filter Kabupaten berdasarkan provinsi_id
     // -------------------------------------------------------------
     console.log('\n--- TEST 13: Master Wilayah - Filter Kabupaten per Provinsi ---');
-    const kabRes = await fetch(`${baseUrl}/master/kabupaten?provinsi_id=${dki.id}`, {
+    const kabRes = await fetch(`${baseUrl}/master/kabupaten?provinsi_id=${dki.provinsi_id || dki.id}`, {
       headers: { 'Authorization': `Bearer ${adminToken}` },
     });
     const kabJson = await kabRes.json();
@@ -268,7 +268,7 @@ async function runTests() {
     // -------------------------------------------------------------
     console.log('\n--- TEST 14: Master Wilayah - Filter Kecamatan per Kabupaten ---');
     const kabPusat = kabJson.data.find(k => k.kode_kabupaten === '31.71');
-    const kecRes = await fetch(`${baseUrl}/master/kecamatan?kabupaten_id=${kabPusat.id}`, {
+    const kecRes = await fetch(`${baseUrl}/master/kecamatan?kabupaten_id=${kabPusat.kabupaten_id || kabPusat.id}`, {
       headers: { 'Authorization': `Bearer ${adminToken}` },
     });
     const kecJson = await kecRes.json();
@@ -280,7 +280,7 @@ async function runTests() {
     // -------------------------------------------------------------
     console.log('\n--- TEST 15: Master Wilayah - Filter Desa / Kelurahan ---');
     const kecGambir = kecJson.data.find(kc => kc.kode_kecamatan === '31.71.01');
-    const desaRes = await fetch(`${baseUrl}/master/desa?kecamatan_id=${kecGambir.id}`, {
+    const desaRes = await fetch(`${baseUrl}/master/desa?kecamatan_id=${kecGambir.kecamatan_id || kecGambir.id}`, {
       headers: { 'Authorization': `Bearer ${adminToken}` },
     });
     const desaJson = await desaRes.json();
@@ -329,8 +329,9 @@ async function runTests() {
     const adminAddJson = await adminAddRes.json();
     assert(adminAddRes.status === 201, 'Admin berhasil menambahkan master provinsi (status 201)');
 
-    if (adminAddJson.data && adminAddJson.data.id) {
-      await fetch(`${baseUrl}/master/provinsi/${adminAddJson.data.id}`, {
+    const adminAddId = adminAddJson.data && (adminAddJson.data.provinsi_id || adminAddJson.data.id);
+    if (adminAddId) {
+      await fetch(`${baseUrl}/master/provinsi/${adminAddId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${adminToken}` },
       });
@@ -382,7 +383,7 @@ async function runTests() {
           hubungan_penanggung_jawab: 'ORANG_TUA',
           telepon_penanggung_jawab: '081234567800',
         },
-        jadwal_dokter_id: jadwalBudi.id,
+        jadwal_dokter_id: (jadwalBudi.jadwaldokter_id || jadwalBudi.jadwal_dokter_id || jadwalBudi.id),
         jenis_penjamin: 'UMUM',
         keluhan_utama: 'Demam tinggi sejak 3 hari yang lalu',
       }),
@@ -396,7 +397,7 @@ async function runTests() {
     assert(regBaruJson.data.status_antrean === 'MENUNGGU', 'Status awal antrean adalah MENUNGGU');
     assert(regBaruJson.data.jenis_pelayanan === 'RAWAT_JALAN', 'Jenis pelayanan tercatat RAWAT_JALAN pada tabel pendaftaran terpadu');
 
-    const regId1 = regBaruJson.data.id;
+    const regId1 = regBaruJson.data.pendaftaran_id || regBaruJson.data.id;
 
     // -------------------------------------------------------------
     // TEST 20: Pendaftaran Rawat Jalan - Pasien Lama (BPJS)
@@ -417,8 +418,8 @@ async function runTests() {
       },
       body: JSON.stringify({
         tipe_pasien: 'LAMA',
-        pasien_id: siti.id,
-        jadwal_dokter_id: jadwalBudi.id,
+        pasien_id: (siti.pasien_id || siti.id),
+        jadwal_dokter_id: (jadwalBudi.jadwaldokter_id || jadwalBudi.jadwal_dokter_id || jadwalBudi.id),
         jenis_penjamin: 'BPJS',
         no_kartu_penjamin: '0001234567890',
         keluhan_utama: 'Kontrol rutin hipertensi',
@@ -426,7 +427,7 @@ async function runTests() {
     });
     const regLamaJson = await regLamaRes.json();
     assert(regLamaRes.status === 201, 'Pendaftaran pasien lama berhasil status 201');
-    assert(regLamaJson.data.pasien.id === siti.id, 'Data pendaftaran terhubung ke pasien Siti Aminah');
+    assert((regLamaJson.data.pasien.pasien_id || regLamaJson.data.pasien.id) === (siti.pasien_id || siti.id), 'Data pendaftaran terhubung ke pasien Siti Aminah');
     assert(regLamaJson.data.jenis_penjamin === 'BPJS', 'Jenis penjamin tercatat BPJS');
     assert(regLamaJson.data.angka_antrean > regBaruJson.data.angka_antrean, 'Nomor antrean bertambah secara sekuensial');
 
@@ -469,8 +470,8 @@ async function runTests() {
       },
       body: JSON.stringify({
         tipe_pasien: 'LAMA',
-        pasien_id: siti.id,
-        jadwal_dokter_id: jadwalBudi.id,
+        pasien_id: (siti.pasien_id || siti.id),
+        jadwal_dokter_id: (jadwalBudi.jadwaldokter_id || jadwalBudi.jadwal_dokter_id || jadwalBudi.id),
         jenis_penjamin: 'BPJS',
       }),
     });
@@ -548,9 +549,10 @@ async function runTests() {
     });
     const createPasienJson = await createPasienRes.json();
     assert(createPasienRes.status === 201, 'POST /api/pasien berhasil membuat pasien baru (status 201)');
-    assert(!!createPasienJson.data.id && typeof createPasienJson.data.id === 'number', 'Pasien baru memiliki ID Auto-Increment (Integer)');
+    const createdPasienPk = createPasienJson.data.pasien_id || createPasienJson.data.id;
+    assert(!!createdPasienPk && typeof createdPasienPk === 'number', 'Pasien baru memiliki ID Auto-Increment (Integer)');
     assert(createPasienJson.data.no_rm.startsWith('RM-'), 'Nomor RM otomatis digenerate');
-    const dedicatedPasienId = createPasienJson.data.id;
+    const dedicatedPasienId = createdPasienPk;
     const dedicatedNoRM = createPasienJson.data.no_rm;
 
     // 2. Get Pasien By ID
@@ -567,7 +569,7 @@ async function runTests() {
     });
     const getByNoRMJson = await getByNoRMRes.json();
     assert(getByNoRMRes.status === 200, 'GET /api/pasien/no-rm/:no_rm berhasil (status 200)');
-    assert(getByNoRMJson.data.id === dedicatedPasienId, 'Data pasien berdasarkan No RM cocok');
+    assert((getByNoRMJson.data.pasien_id || getByNoRMJson.data.id) === dedicatedPasienId, 'Data pasien berdasarkan No RM cocok');
 
     // 4. Get Pasien By NIK
     const getByNikRes = await fetch(`${baseUrl}/pasien/nik/${dedicatedNik}`, {
@@ -575,7 +577,7 @@ async function runTests() {
     });
     const getByNikJson = await getByNikRes.json();
     assert(getByNikRes.status === 200, 'GET /api/pasien/nik/:nik berhasil (status 200)');
-    assert(getByNikJson.data.id === dedicatedPasienId, 'Data pasien berdasarkan NIK cocok');
+    assert((getByNikJson.data.pasien_id || getByNikJson.data.id) === dedicatedPasienId, 'Data pasien berdasarkan NIK cocok');
 
     // 5. Update Pasien
     const updatePasienRes = await fetch(`${baseUrl}/pasien/${dedicatedPasienId}`, {
@@ -607,7 +609,7 @@ async function runTests() {
 
     // Permanent Cleanup Pasien
     const { Pasien: PasienCleanup } = require('../models');
-    await PasienCleanup.destroy({ where: { id: dedicatedPasienId }, force: true });
+    await PasienCleanup.destroy({ where: { pasien_id: dedicatedPasienId }, force: true });
 
     // -------------------------------------------------------------
     // TEST 26: Master Jadwal Dokter CRUD & Proteksi Admin (/api/jadwal-dokter)
@@ -650,7 +652,7 @@ async function runTests() {
     const createJadwalJson = await createJadwalRes.json();
     assert(createJadwalRes.status === 201, 'Admin berhasil menambahkan jadwal dokter baru (status 201)');
     assert(createJadwalJson.data.hari === 'MINGGU', 'Hari jadwal dokter tercatat MINGGU');
-    const newJadwalId = createJadwalJson.data.id;
+    const newJadwalId = createJadwalJson.data.jadwaldokter_id || createJadwalJson.data.jadwal_dokter_id || createJadwalJson.data.id;
 
     // Get Jadwal Dokter by ID -> 200
     const getJadwalRes = await fetch(`${baseUrl}/jadwal-dokter/${newJadwalId}`, {
@@ -708,7 +710,7 @@ async function runTests() {
     });
     const newInstalasiJson = await newInstalasiRes.json();
     assert(newInstalasiRes.status === 201, 'POST /api/instalasi berhasil status 201');
-    const createdInstalasiId = newInstalasiJson.data.id;
+    const createdInstalasiId = newInstalasiJson.data.instalasi_id || newInstalasiJson.data.id;
 
     const getInstalasiRes = await fetch(`${baseUrl}/instalasi/${createdInstalasiId}`, {
       headers: { 'Authorization': `Bearer ${adminToken}` },
@@ -730,7 +732,7 @@ async function runTests() {
     });
     const newRuanganJson = await newRuanganRes.json();
     assert(newRuanganRes.status === 201, 'POST /api/ruangan berhasil status 201');
-    const createdRuanganId = newRuanganJson.data.id;
+    const createdRuanganId = newRuanganJson.data.ruangan_id || newRuanganJson.data.id;
 
     const getRuanganRes = await fetch(`${baseUrl}/ruangan/${createdRuanganId}`, {
       headers: { 'Authorization': `Bearer ${adminToken}` },
@@ -751,7 +753,7 @@ async function runTests() {
     });
     const newRoleJson = await newRoleRes.json();
     assert(newRoleRes.status === 201, 'POST /api/roles berhasil status 201');
-    const createdRoleId = newRoleJson.data.id;
+    const createdRoleId = newRoleJson.data.role_id || newRoleJson.data.id;
 
     const getRoleRes = await fetch(`${baseUrl}/roles/${createdRoleId}`, {
       headers: { 'Authorization': `Bearer ${adminToken}` },
@@ -760,15 +762,16 @@ async function runTests() {
 
     // Cleanup dedicated test entries
     const { Instalasi: MInstalasi, Ruangan: MRuangan, Role: MRole } = require('../models');
-    await MRuangan.destroy({ where: { id: createdRuanganId }, force: true });
-    await MInstalasi.destroy({ where: { id: createdInstalasiId }, force: true });
-    await MRole.destroy({ where: { id: createdRoleId }, force: true });
+    await MRuangan.destroy({ where: { ruangan_id: createdRuanganId }, force: true });
+    await MInstalasi.destroy({ where: { instalasi_id: createdInstalasiId }, force: true });
+    await MRole.destroy({ where: { role_id: createdRoleId }, force: true });
 
     // Cleanup data uji coba pendaftaran agar tes dapat dijalankan berulang secara idempotent
     const { Pendaftaran: PRJ, Pasien: PasienModel } = require('../models');
-    await PRJ.destroy({ where: { id: [regId1, regLamaJson.data ? regLamaJson.data.id : null] }, force: true });
+    const reg2Id = regLamaJson.data ? (regLamaJson.data.pendaftaran_id || regLamaJson.data.id) : null;
+    await PRJ.destroy({ where: { pendaftaran_id: [regId1, reg2Id].filter(Boolean) }, force: true });
     if (regBaruJson.data && regBaruJson.data.pasien) {
-      await PasienModel.destroy({ where: { id: regBaruJson.data.pasien.id }, force: true });
+      await PasienModel.destroy({ where: { pasien_id: (regBaruJson.data.pasien.pasien_id || regBaruJson.data.pasien.id) }, force: true });
     }
 
   } catch (error) {

@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Modul = sequelize.define('Modul', {
-  id: {
+  modul_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -42,7 +42,6 @@ const Modul = sequelize.define('Modul', {
   tableName: 'modul',
   paranoid: true,
 });
-
 
 Modul.associate = (models) => {
   Modul.hasMany(models.Menu, {

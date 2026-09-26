@@ -25,9 +25,9 @@ async function seedPendaftaran(transaction = null, closeConnection = false) {
       for (let i = 0; i < hariList.length; i++) {
         const h = hariList[i];
         await JadwalDokter.upsert({
-          id: i + 1,
-          dokter_id: dokterBudi.id,
-          ruangan_id: poliDalam.id,
+          jadwaldokter_id: i + 1,
+          dokter_id: dokterBudi.user_id,
+          ruangan_id: poliDalam.ruangan_id,
           hari: h,
           jam_mulai: '08:00',
           jam_selesai: '12:00',
@@ -108,8 +108,8 @@ async function seedPendaftaran(transaction = null, closeConnection = false) {
     if (localTx) {
       await t.commit();
       try {
-        await sequelize.query("SELECT setval('jadwal_dokter_id_seq', COALESCE((SELECT MAX(id) FROM jadwal_dokter), 1));");
-        await sequelize.query("SELECT setval('pendaftaran_id_seq', COALESCE((SELECT MAX(id) FROM pendaftaran), 1));");
+        await sequelize.query("SELECT setval('jadwaldokter_id_seq', COALESCE((SELECT MAX(jadwaldokter_id) FROM jadwal_dokter), 1));");
+        await sequelize.query("SELECT setval('pendaftaran_id_seq', COALESCE((SELECT MAX(pendaftaran_id) FROM pendaftaran), 1));");
       } catch (_) {}
       console.log('✓ Seeding Jadwal Dokter & Pasien selesai!');
     }

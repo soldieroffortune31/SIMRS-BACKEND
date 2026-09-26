@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const UserRuanganRole = sequelize.define('UserRuanganRole', {
-  id: {
+  userruanganrole_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -12,7 +12,7 @@ const UserRuanganRole = sequelize.define('UserRuanganRole', {
     allowNull: false,
     references: {
       model: 'users',
-      key: 'id',
+      key: 'user_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -22,7 +22,7 @@ const UserRuanganRole = sequelize.define('UserRuanganRole', {
     allowNull: false,
     references: {
       model: 'ruangan',
-      key: 'id',
+      key: 'ruangan_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
@@ -32,7 +32,7 @@ const UserRuanganRole = sequelize.define('UserRuanganRole', {
     allowNull: false,
     references: {
       model: 'roles',
-      key: 'id',
+      key: 'role_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',

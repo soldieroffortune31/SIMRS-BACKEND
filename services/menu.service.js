@@ -27,7 +27,8 @@ class MenuService {
 
     for (const item of filtered) {
       const itemJson = typeof item.toJSON === 'function' ? item.toJSON() : { ...item };
-      const children = this.buildTree(items, itemJson.id);
+      const currentMenuId = itemJson.menu_id !== undefined ? itemJson.menu_id : itemJson.id;
+      const children = this.buildTree(items, currentMenuId);
       if (children.length > 0) {
         itemJson.children = children;
       } else {
@@ -59,7 +60,6 @@ class MenuService {
     }
 
     // 2. Ambil mapping Menu - Instalasi untuk instalasiId ini
-    // Serta cari menu mana saja yang tidak memiliki batasan instalasi sama sekali (menu global/umum)
     const allMenuInstalasi = await MenuInstalasi.findAll({
       attributes: ['menu_id', 'instalasi_id'],
     });
@@ -74,13 +74,10 @@ class MenuService {
         .map(mi => mi.menu_id)
     );
 
-    // Menu lolos filter jika:
-    // a. Terdaftar untuk role user
-    // b. DAN (tidak dibatasi instalasi ATAU dibatasi tapi instalasi aktif termasuk di dalamnya)
     let validMenuIds = allowedMenuIdsForRole.filter(menuId => {
       const isRestricted = restrictedMenuIds.has(menuId);
-      if (!isRestricted) return true; // Global menu (misal Dashboard, Pengaturan Umum)
-      return allowedForThisInstalasi.has(menuId); // Khusus instalasi ini
+      if (!isRestricted) return true;
+      return allowedForThisInstalasi.has(menuId);
     });
 
     if (validMenuIds.length === 0) {
@@ -91,14 +88,14 @@ class MenuService {
     const { Modul } = require('../models');
     const rawMenus = await Menu.findAll({
       where: {
-        id: { [Op.in]: validMenuIds },
+        menu_id: { [Op.in]: validMenuIds },
         is_active: true,
       },
       include: [
         {
           model: Modul,
           as: 'modul',
-          attributes: ['id', 'kode_modul', 'nama_modul', 'icon'],
+          attributes: ['modul_id', 'kode_modul', 'nama_modul', 'icon'],
           required: false,
         },
       ],
@@ -110,7 +107,6 @@ class MenuService {
     if (Array.isArray(allowedModuleIds)) {
       const allowedModSet = new Set(allowedModuleIds);
       filteredMenus = rawMenus.filter(m => {
-        // Jika menu tidak terikat modul manapun (modul_id null), anggap menu global
         if (!m.modul_id) return true;
         return allowedModSet.has(m.modul_id);
       });
@@ -118,7 +114,7 @@ class MenuService {
 
     // Pastikan jika sebuah child lolos, parent-nya juga diambil meskipun parent mungkin tidak punya URL langsung
     const menuMap = new Map();
-    filteredMenus.forEach(m => menuMap.set(m.id, m));
+    filteredMenus.forEach(m => menuMap.set(m.menu_id || m.id, m));
 
     const parentIdsToFetch = [];
     filteredMenus.forEach(m => {
@@ -130,19 +126,19 @@ class MenuService {
     if (parentIdsToFetch.length > 0) {
       const parentMenus = await Menu.findAll({
         where: {
-          id: { [Op.in]: [...new Set(parentIdsToFetch)] },
+          menu_id: { [Op.in]: [...new Set(parentIdsToFetch)] },
           is_active: true,
         },
         include: [
           {
             model: Modul,
             as: 'modul',
-            attributes: ['id', 'kode_modul', 'nama_modul', 'icon'],
+            attributes: ['modul_id', 'kode_modul', 'nama_modul', 'icon'],
             required: false,
           },
         ],
       });
-      parentMenus.forEach(p => menuMap.set(p.id, p));
+      parentMenus.forEach(p => menuMap.set(p.menu_id || p.id, p));
     }
 
     const fullList = Array.from(menuMap.values());
@@ -180,13 +176,13 @@ class MenuService {
         {
           model: Instalasi,
           as: 'instalasi_list',
-          attributes: ['id', 'kode_instalasi', 'nama_instalasi'],
+          attributes: ['instalasi_id', 'kode_instalasi', 'nama_instalasi'],
           through: { attributes: [] },
         },
         {
           model: Role,
           as: 'roles',
-          attributes: ['id', 'kode_role', 'nama_role'],
+          attributes: ['role_id', 'kode_role', 'nama_role'],
           through: { attributes: [] },
         },
       ],

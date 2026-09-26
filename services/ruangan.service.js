@@ -12,10 +12,10 @@ class RuanganService {
         {
           model: Instalasi,
           as: 'instalasi',
-          attributes: ['id', 'kode_instalasi', 'nama_instalasi'],
+          attributes: ['instalasi_id', 'kode_instalasi', 'nama_instalasi'],
         },
       ],
-      order: [['id', 'ASC']],
+      order: [['ruangan_id', 'ASC']],
     });
   }
 
@@ -25,7 +25,7 @@ class RuanganService {
         {
           model: Instalasi,
           as: 'instalasi',
-          attributes: ['id', 'kode_instalasi', 'nama_instalasi'],
+          attributes: ['instalasi_id', 'kode_instalasi', 'nama_instalasi'],
         },
       ],
     });
@@ -86,7 +86,7 @@ class RuanganService {
   async deleteRuangan(id) {
     const ruangan = await this.getRuanganById(id);
     await ruangan.destroy();
-    return { id, message: 'Ruangan berhasil dihapus.' };
+    return { ruangan_id: id, id, message: 'Ruangan berhasil dihapus.' };
   }
 }
 

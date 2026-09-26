@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Pendaftaran = sequelize.define('Pendaftaran', {
-  id: {
+  pendaftaran_id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -17,7 +17,7 @@ const Pendaftaran = sequelize.define('Pendaftaran', {
     allowNull: false,
     references: {
       model: 'pasien',
-      key: 'id',
+      key: 'pasien_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
@@ -50,7 +50,7 @@ const Pendaftaran = sequelize.define('Pendaftaran', {
     allowNull: true,
     references: {
       model: 'ruangan',
-      key: 'id',
+      key: 'ruangan_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
@@ -60,17 +60,17 @@ const Pendaftaran = sequelize.define('Pendaftaran', {
     allowNull: true,
     references: {
       model: 'users',
-      key: 'id',
+      key: 'user_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
   },
-  jadwal_dokter_id: {
+  jadwaldokter_id: {
     type: DataTypes.INTEGER,
     allowNull: true,
     references: {
       model: 'jadwal_dokter',
-      key: 'id',
+      key: 'jadwaldokter_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -104,7 +104,6 @@ const Pendaftaran = sequelize.define('Pendaftaran', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
-  // Bidang spesifik alih rawat / IGD / Rawat Inap
   triage_level: {
     type: DataTypes.ENUM('MERAH', 'KUNING', 'HIJAU', 'HITAM'),
     allowNull: true,
@@ -118,7 +117,7 @@ const Pendaftaran = sequelize.define('Pendaftaran', {
     allowNull: true,
     references: {
       model: 'pendaftaran',
-      key: 'id',
+      key: 'pendaftaran_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -140,7 +139,7 @@ const Pendaftaran = sequelize.define('Pendaftaran', {
     allowNull: true,
     references: {
       model: 'users',
-      key: 'id',
+      key: 'user_id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
@@ -166,7 +165,7 @@ Pendaftaran.associate = (models) => {
     as: 'pasien',
   });
   Pendaftaran.belongsTo(models.JadwalDokter, {
-    foreignKey: 'jadwal_dokter_id',
+    foreignKey: 'jadwaldokter_id',
     as: 'jadwal_dokter',
   });
   Pendaftaran.belongsTo(models.User, {
